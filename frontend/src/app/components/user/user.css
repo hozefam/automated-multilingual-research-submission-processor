@@ -522,3 +522,198 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── My Submissions ──────────────────────────────── */
+.my-submissions {
+  margin-top: 36px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 28px 28px 24px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
+}
+
+.submissions-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.submissions-subtitle {
+  font-size: 0.83rem;
+  color: #666;
+  margin: 2px 0 0;
+}
+
+.btn-refresh-subs {
+  padding: 8px 18px;
+  background: #1b5e20;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.btn-refresh-subs:hover:not(:disabled) {
+  background: #2e7d32;
+}
+
+.btn-refresh-subs:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.subs-empty {
+  text-align: center;
+  padding: 32px;
+  color: #999;
+  font-size: 0.9rem;
+  background: #f9fdf9;
+  border-radius: 10px;
+  border: 1.5px dashed #c8e6c9;
+}
+
+.subs-table-wrap {
+  overflow-x: auto;
+}
+
+.subs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.subs-table th {
+  background: #f0f7f0;
+  color: #444;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid #dcedc8;
+}
+
+.subs-table td {
+  padding: 12px 14px;
+  font-size: 0.87rem;
+  color: #333;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+
+.subs-table tr:last-child td {
+  border-bottom: none;
+}
+
+.subs-table tr:hover td {
+  background: #f9fdf9;
+}
+
+.subs-filename {
+  font-weight: 600;
+  color: #1b3a1b;
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.subs-date {
+  white-space: nowrap;
+  color: #666;
+  font-size: 0.82rem;
+}
+
+.subs-note {
+  font-size: 0.82rem;
+  color: #666;
+  max-width: 280px;
+}
+
+.rejection-note {
+  color: #b71c1c;
+  font-style: italic;
+}
+
+.muted {
+  color: #aaa;
+  font-style: italic;
+}
+
+/* ── Submission status badges ────────────────────── */
+.sbadge-ok {
+  display: inline-block;
+  padding: 3px 10px;
+  background: #e8f5e9;
+  color: #1b5e20;
+  border-radius: 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.sbadge-warn {
+  display: inline-block;
+  padding: 3px 10px;
+  background: #fff8e1;
+  color: #f57f17;
+  border-radius: 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.sbadge-auto {
+  display: inline-block;
+  padding: 3px 10px;
+  background: #e3f2fd;
+  color: #0d47a1;
+  border-radius: 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.sbadge-awaiting {
+  display: inline-block;
+  padding: 3px 10px;
+  background: #fff3e0;
+  color: #e65100;
+  border-radius: 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.sbadge-approved {
+  display: inline-block;
+  padding: 3px 10px;
+  background: #e8f5e9;
+  color: #1b5e20;
+  border-radius: 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.sbadge-rejected {
+  display: inline-block;
+  padding: 3px 10px;
+  background: #ffebee;
+  color: #b71c1c;
+  border-radius: 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+@media (max-width: 700px) {
+  .submissions-header {
+    flex-direction: column;
+  }
+
+  .btn-refresh-subs {
+    width: 100%;
+  }
+}

@@ -1,5 +1,6 @@
 import {
   ApiService,
+  DocumentSummary,
   PipelineResult,
   PipelineStepMeta,
   StepResult,
@@ -37,6 +38,8 @@ export class UserComponent implements OnInit {
   totalElapsedMs = signal<number | null>(null);
 
   steps = signal<PipelineStep[]>([]);
+  mySubmissions = signal<DocumentSummary[]>([]);
+  submissionsLoading = signal(false);
 
   completedSteps = computed(() => this.steps().filter((s) => s.state === 'done').length);
   progressPercent = computed(() => Math.round((this.completedSteps() / this.steps().length) * 100));
@@ -60,6 +63,24 @@ export class UserComponent implements OnInit {
         );
       },
     });
+    this.loadMySubmissions();
+  }
+
+  loadMySubmissions(): void {
+    this.submissionsLoading.set(true);
+    this.apiService.getDocuments().subscribe({
+      next: (docs) => {
+        this.mySubmissions.set(docs);
+        this.submissionsLoading.set(false);
+      },
+      error: () => this.submissionsLoading.set(false),
+    });
+  }
+
+  reviewStatusLabel(doc: DocumentSummary): 'awaiting' | 'approved' | 'rejected' | 'auto' {
+    if (!doc.requiresReview) return 'auto';
+    if (!doc.reviewDecision) return 'awaiting';
+    return doc.reviewDecision.approved ? 'approved' : 'rejected';
   }
 
   onFileSelected(event: Event): void {
@@ -159,9 +180,12 @@ export class UserComponent implements OnInit {
       );
     });
 
-    // Mark overall status after all animations complete
+    // Mark overall status after all animations complete, then refresh submissions
     setTimeout(
-      () => this.uploadStatus.set(result.overallSuccess ? 'done' : 'done'),
+      () => {
+        this.uploadStatus.set('done');
+        this.loadMySubmissions();
+      },
       stepResults.length * STEP_DELAY * 2 + STEP_DELAY,
     );
   }

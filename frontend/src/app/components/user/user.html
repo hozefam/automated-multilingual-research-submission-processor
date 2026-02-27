@@ -167,5 +167,83 @@
         </ol>
       </section>
     </div>
+
+    <!-- ── My Submissions ──────────────────────────────────────────────── -->
+    <section class="my-submissions">
+      <div class="submissions-header">
+        <div>
+          <h3 class="panel-title">&#128196; My Submissions</h3>
+          <p class="submissions-subtitle">Track your uploaded documents and their review status.</p>
+        </div>
+        <button
+          class="btn-refresh-subs"
+          (click)="loadMySubmissions()"
+          [disabled]="submissionsLoading()"
+        >
+          &#8635; Refresh
+        </button>
+      </div>
+
+      @if (submissionsLoading()) {
+        <div class="subs-empty">Loading your submissions&hellip;</div>
+      } @else if (mySubmissions().length === 0) {
+        <div class="subs-empty">No submissions yet. Upload a document above to get started.</div>
+      } @else {
+        <div class="subs-table-wrap">
+          <table class="subs-table">
+            <thead>
+              <tr>
+                <th>File</th>
+                <th>Submitted</th>
+                <th>Pipeline</th>
+                <th>Review Status</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (doc of mySubmissions(); track doc.documentId) {
+                <tr>
+                  <td class="subs-filename">&#128196; {{ doc.fileName }}</td>
+                  <td class="subs-date">{{ doc.processedAt | date: 'mediumDate' }}</td>
+                  <td>
+                    <span
+                      [class.sbadge-ok]="doc.overallSuccess"
+                      [class.sbadge-warn]="!doc.overallSuccess"
+                    >
+                      {{ doc.overallSuccess ? '&#10003; OK' : '&#9888; Errors' }}
+                    </span>
+                  </td>
+                  <td>
+                    @switch (reviewStatusLabel(doc)) {
+                      @case ('auto') {
+                        <span class="sbadge-auto">&#9654; Auto-passed</span>
+                      }
+                      @case ('awaiting') {
+                        <span class="sbadge-awaiting">&#9202; Awaiting Review</span>
+                      }
+                      @case ('approved') {
+                        <span class="sbadge-approved">&#10003; Approved</span>
+                      }
+                      @case ('rejected') {
+                        <span class="sbadge-rejected">&#10007; Rejected</span>
+                      }
+                    }
+                  </td>
+                  <td class="subs-note">
+                    @if (doc.reviewDecision?.rejectionReason) {
+                      <span class="rejection-note">{{ doc.reviewDecision!.rejectionReason }}</span>
+                    } @else if (reviewStatusLabel(doc) === 'awaiting') {
+                      <span class="muted">Pending admin decision</span>
+                    } @else {
+                      &ndash;
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
   </main>
 </div>
