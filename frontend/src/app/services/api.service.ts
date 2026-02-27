@@ -3,6 +3,13 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+export interface PipelineStepMeta {
+  id: number;
+  name: string;
+  icon: string;
+  description: string;
+}
+
 export interface HealthResponse {
   version: string;
   status: string;
@@ -43,6 +50,10 @@ export class ApiService {
 
   getHealth(): Observable<HealthResponse> {
     return this.http.get<HealthResponse>(`${this.baseUrl}/api/health`);
+  }
+
+  getPipelineSteps(): Observable<PipelineStepMeta[]> {
+    return this.http.get<PipelineStepMeta[]>(`${this.baseUrl}/api/documents/pipeline-steps`);
   }
 
   uploadDocument(file: File): Observable<PipelineResult> {

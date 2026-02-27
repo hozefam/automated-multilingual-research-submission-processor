@@ -1,5 +1,10 @@
-import { ApiService, PipelineResult, StepResult } from '../../services/api.service';
-import { Component, computed, signal } from '@angular/core';
+import {
+  ApiService,
+  PipelineResult,
+  PipelineStepMeta,
+  StepResult,
+} from '../../services/api.service';
+import { Component, OnInit, computed, signal } from '@angular/core';
 
 import { AuthService } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
@@ -23,7 +28,7 @@ export interface PipelineStep {
   templateUrl: './user.html',
   styleUrl: './user.css',
 })
-export class UserComponent {
+export class UserComponent implements OnInit {
   selectedFile = signal<File | null>(null);
   uploadStatus = signal<UploadStatus>('idle');
   isDragOver = signal(false);
@@ -31,85 +36,7 @@ export class UserComponent {
   apiError = signal<string | null>(null);
   totalElapsedMs = signal<number | null>(null);
 
-  steps = signal<PipelineStep[]>([
-    {
-      id: 1,
-      icon: '📥',
-      title: 'Ingestion Agent',
-      description: 'Simulating email inbox monitoring by reading submission from the watch folder.',
-      state: 'pending',
-    },
-    {
-      id: 2,
-      icon: '🔄',
-      title: 'Pre-process Agent',
-      description: 'Validating file type, running OCR on scanned pages, detecting language.',
-      state: 'pending',
-    },
-    {
-      id: 3,
-      icon: '🌍',
-      title: 'Translation Agent',
-      description: 'Translating submission to English; storing both original and translated text.',
-      state: 'pending',
-    },
-    {
-      id: 4,
-      icon: '🧠',
-      title: 'Extraction Agent',
-      description: 'Extracting title, authors, affiliations, abstract, keywords and figures.',
-      state: 'pending',
-    },
-    {
-      id: 5,
-      icon: '✔️',
-      title: 'Validation Agent',
-      description: 'Enforcing business rules: page count 8–25, required sections present.',
-      state: 'pending',
-    },
-    {
-      id: 6,
-      icon: '🛡️',
-      title: 'Content Safety Agent',
-      description: 'Scanning for toxicity, hate speech and illicit content.',
-      state: 'pending',
-    },
-    {
-      id: 7,
-      icon: '🔍',
-      title: 'Plagiarism Detection Agent',
-      description: 'Cross-referencing against academic databases for similarity.',
-      state: 'pending',
-    },
-    {
-      id: 8,
-      icon: '📚',
-      title: 'RAG Agent',
-      description: 'Generating embeddings and indexing document into the vector knowledge base.',
-      state: 'pending',
-    },
-    {
-      id: 9,
-      icon: '✨',
-      title: 'Summary Agent',
-      description: 'Generating ≤250-word summary with key findings and validation issues.',
-      state: 'pending',
-    },
-    {
-      id: 10,
-      icon: '💬',
-      title: 'Q&A Agent',
-      description: 'Preparing multilingual conversational Q&A with chat history.',
-      state: 'pending',
-    },
-    {
-      id: 11,
-      icon: '👤',
-      title: 'Human Feedback Agent',
-      description: 'Evaluating confidence; flagging items below 25% for admin HITL review.',
-      state: 'pending',
-    },
-  ]);
+  steps = signal<PipelineStep[]>([]);
 
   completedSteps = computed(() => this.steps().filter((s) => s.state === 'done').length);
   progressPercent = computed(() => Math.round((this.completedSteps() / this.steps().length) * 100));
@@ -118,6 +45,22 @@ export class UserComponent {
     public auth: AuthService,
     private apiService: ApiService,
   ) {}
+
+  ngOnInit(): void {
+    this.apiService.getPipelineSteps().subscribe({
+      next: (stepsFromApi: PipelineStepMeta[]) => {
+        this.steps.set(
+          stepsFromApi.map((s) => ({
+            id: s.id,
+            icon: s.icon,
+            title: s.name,
+            description: s.description,
+            state: 'pending' as StepState,
+          })),
+        );
+      },
+    });
+  }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
