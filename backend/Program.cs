@@ -1,6 +1,7 @@
 using Backend.Endpoints;
 using Backend.Pipeline;
 using Backend.Services;
+using Microsoft.SemanticKernel;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +36,26 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
+});
+
+// ── Semantic Kernel ───────────────────────────────────────────────────────────
+// Kernel – registered as singleton; pipeline services can inject it later.
+builder.Services.AddSingleton<Kernel>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+
+    var kBuilder = Kernel.CreateBuilder();
+
+    // Azure OpenAI chat completion – drives summarization, Q&A and metadata extraction
+    kBuilder.AddAzureOpenAIChatCompletion(
+        deploymentName: config["AzureOpenAI:ChatDeployment"]
+            ?? throw new InvalidOperationException("AzureOpenAI:ChatDeployment is not configured."),
+        endpoint: config["AzureOpenAI:Endpoint"]
+            ?? throw new InvalidOperationException("AzureOpenAI:Endpoint is not configured."),
+        apiKey: config["AzureOpenAI:ApiKey"]
+            ?? throw new InvalidOperationException("AzureOpenAI:ApiKey is not configured."));
+
+    return kBuilder.Build();
 });
 
 // ── Pipeline Services ─────────────────────────────────────────────────────────
