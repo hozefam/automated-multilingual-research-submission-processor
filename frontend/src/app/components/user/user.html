@@ -1,0 +1,43 @@
+<div class="page-wrapper">
+  <!-- Header -->
+  <header class="header user-header">
+    <div class="header-brand">
+      <span class="brand-icon">📝</span>
+      <span class="brand-name">AMRSP Portal</span>
+    </div>
+    <div class="header-right">
+      <app-health-status />
+      <span class="welcome-text">Welcome, {{ auth.currentUser() }}</span>
+      <button class="btn-logout" (click)="auth.logout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="hero-card user-hero">
+      <h2>My Dashboard</h2>
+      <p>
+        Welcome back, <strong>{{ auth.currentUser() }}</strong
+        >. Submit and track your multilingual research papers here.
+      </p>
+    </div>
+
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-icon">➕</div>
+        <h3>New Submission</h3>
+        <p>Submit a new research paper for review.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔍</div>
+        <h3>My Submissions</h3>
+        <p>Track the status of your existing submissions.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌐</div>
+        <h3>Languages</h3>
+        <p>View supported languages for submission.</p>
+      </div>
+    </div>
+  </main>
+</div>

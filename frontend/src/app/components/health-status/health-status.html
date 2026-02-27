@@ -1,0 +1,10 @@
+<div class="health-badge" [class]="state()" (click)="checkHealth()" title="Click to refresh">
+  <span class="dot"></span>
+  @if (state() === 'checking') {
+    <span class="label">Checking API...</span>
+  } @else if (state() === 'healthy') {
+    <span class="label">API v{{ version() }}</span>
+  } @else {
+    <span class="label">API Unreachable</span>
+  }
+</div>

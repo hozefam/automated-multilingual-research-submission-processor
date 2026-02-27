@@ -1,0 +1,43 @@
+<div class="page-wrapper">
+  <!-- Header -->
+  <header class="header admin-header">
+    <div class="header-brand">
+      <span class="brand-icon">🛡️</span>
+      <span class="brand-name">AMRSP Admin Portal</span>
+    </div>
+    <div class="header-right">
+      <app-health-status />
+      <span class="welcome-text">Welcome, {{ auth.currentUser() }}</span>
+      <button class="btn-logout" (click)="auth.logout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="hero-card admin-hero">
+      <h2>Admin Dashboard</h2>
+      <p>
+        You are logged in as <strong>Administrator</strong>. Manage the research submission system
+        from here.
+      </p>
+    </div>
+
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-icon">📄</div>
+        <h3>Submissions</h3>
+        <p>Review and manage all research submissions.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">👥</div>
+        <h3>Users</h3>
+        <p>Manage system users and their permissions.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <h3>Reports</h3>
+        <p>View analytics and generate system reports.</p>
+      </div>
+    </div>
+  </main>
+</div>

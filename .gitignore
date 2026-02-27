@@ -1,0 +1,93 @@
+# ============================================================
+#  AMRSP — Root .gitignore
+# ============================================================
+
+# ── .NET / ASP.NET Core ─────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.rsuser
+.idea/
+*.DotSettings.user
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Publish output
+publish/
+out/
+
+# Rider / VS temp files
+_ReSharper*/
+*.resharper
+[Tt]emp/
+[Ll]og/
+[Ll]ogs/
+
+# ── Angular / Node ──────────────────────────────────────────
+node_modules/
+dist/
+tmp/
+out-tsc/
+bazel-out/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Angular cache
+.angular/
+
+# Test output
+coverage/
+.nyc_output/
+__screenshots__/
+
+# ── Environment / Secrets ────────────────────────────────────
+.env
+.env.*
+!.env.example
+appsettings.Production.json
+appsettings.Staging.json
+secrets.json
+
+# ── OS & Editor ──────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# VS Code — keep shared settings, ignore personal
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/mcp.json
+.history/
+
+# JetBrains
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-workspace
+
+# ── Misc ─────────────────────────────────────────────────────
+*.log
+*.lock
+!package-lock.json
+*.bak
+*.swp
+*.tmp
