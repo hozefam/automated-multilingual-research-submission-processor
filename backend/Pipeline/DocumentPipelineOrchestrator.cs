@@ -80,6 +80,15 @@ public class DocumentPipelineOrchestrator
         _logger.LogInformation("=== Pipeline START  |  Document: '{DocumentId}'  |  File: '{FileName}' ===",
             documentId, fileName);
 
+        // Buffer the upload stream once so multiple agents can each get a fresh
+        // MemoryStream over the same bytes without consuming the original.
+        byte[] fileBytes;
+        using (var buffer = new MemoryStream())
+        {
+            await fileStream.CopyToAsync(buffer, ct);
+            fileBytes = buffer.ToArray();
+        }
+
         // ── Step 1: Ingestion Agent ────────────────────────────────────
         // Simulates reading the submission from the email inbox (file system watch folder).
         // When called via HTTP upload the file path is recorded as the temp stream source.
@@ -91,7 +100,7 @@ public class DocumentPipelineOrchestrator
         // Validates file type, runs OCR on scanned documents, detects language.
         var preProcessResult = await SafeRunAsync(
             "Pre-process Agent",
-            () => _preProcessAgent.PreProcessAsync(fileStream, fileName, ct));
+            () => _preProcessAgent.PreProcessAsync(new MemoryStream(fileBytes), fileName, ct));
 
         // Resolved text: use OCR/extracted text from pre-process if available
         var rawText = preProcessResult.Data?.ExtractedText
@@ -112,7 +121,7 @@ public class DocumentPipelineOrchestrator
         // Extracts title, authors, affiliations, abstract, keywords, figures.
         var extractionResult = await SafeRunAsync(
             "Extraction Agent",
-            () => _extractionAgent.ExtractAsync(fileStream, fileName, ct));
+            () => _extractionAgent.ExtractAsync(new MemoryStream(fileBytes), fileName, ct));
 
         var metadata = extractionResult.Data;
 
