@@ -27,7 +27,19 @@ export class AuthService {
 
   login(username: string, password: string): boolean {
     const match = STATIC_USERS.find((u) => u.username === username && u.password === password);
+    if (match) {
+      this._currentRole.set(match.role);
+      this._currentUser.set(match.username);
+      this.router.navigate([`/${match.role}`]);
+      return true;
+    }
+    return false;
+  }
 
+  loginAsRole(username: string, password: string, role: UserRole): boolean {
+    const match = STATIC_USERS.find(
+      (u) => u.username === username && u.password === password && u.role === role,
+    );
     if (match) {
       this._currentRole.set(match.role);
       this._currentUser.set(match.username);
@@ -40,7 +52,7 @@ export class AuthService {
   logout(): void {
     this._currentRole.set(null);
     this._currentUser.set(null);
-    this.router.navigate(['/login']);
+    this.router.navigate(['/']);
   }
 
   isLoggedIn(): boolean {

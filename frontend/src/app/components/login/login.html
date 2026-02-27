@@ -1,7 +1,40 @@
 <div class="login-wrapper">
   <div class="login-card">
+    <!-- Back link -->
+    <a routerLink="/" class="back-link">← Back to Home</a>
+
     <h1 class="login-title">AMRSP Portal</h1>
-    <p class="login-subtitle">Sign in to continue</p>
+
+    <!-- Role selector -->
+    <div class="role-selector">
+      <label class="role-option" [class.active]="selectedRole() === 'user'">
+        <input
+          type="radio"
+          name="role"
+          value="user"
+          [checked]="selectedRole() === 'user'"
+          (change)="onRoleChange('user')"
+        />
+        <span class="role-icon">👤</span>
+        <span>User Login</span>
+      </label>
+      <label class="role-option" [class.active]="selectedRole() === 'admin'">
+        <input
+          type="radio"
+          name="role"
+          value="admin"
+          [checked]="selectedRole() === 'admin'"
+          (change)="onRoleChange('admin')"
+        />
+        <span class="role-icon">🛡️</span>
+        <span>Admin Login</span>
+      </label>
+    </div>
+
+    <p class="login-subtitle">
+      Sign in as
+      <strong>{{ selectedRole() === 'admin' ? 'Administrator' : 'User' }}</strong>
+    </p>
 
     <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
       <div class="form-group">
@@ -11,7 +44,7 @@
           type="text"
           [(ngModel)]="username"
           name="username"
-          placeholder="Enter username"
+          [placeholder]="selectedRole() === 'admin' ? 'Enter admin username' : 'Enter username'"
           required
           autocomplete="username"
         />
@@ -34,7 +67,9 @@
         <p class="error-message">{{ errorMessage() }}</p>
       }
 
-      <button type="submit" class="btn-login">Login</button>
+      <button type="submit" class="btn-login" [class.admin-btn]="selectedRole() === 'admin'">
+        {{ selectedRole() === 'admin' ? '🛡️ Login as Admin' : '👤 Login as User' }}
+      </button>
     </form>
   </div>
 </div>

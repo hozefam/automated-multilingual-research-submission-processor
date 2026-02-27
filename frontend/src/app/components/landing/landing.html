@@ -1,0 +1,56 @@
+<!-- ── Hero ─────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">Research · Multilingual · Automated</div>
+    <h1 class="hero-title">
+      Automated Multilingual<br />
+      <span class="hero-accent">Research Submission</span><br />
+      Processor
+    </h1>
+    <p class="hero-subtitle">
+      A smart platform for submitting, reviewing, and managing multilingual academic research papers
+      — powered by AI-driven extraction, safety, and analysis tools.
+    </p>
+
+    <div class="hero-actions">
+      <button class="btn-user" (click)="goToLogin('user')">
+        <span class="btn-icon">👤</span>
+        User Login
+      </button>
+      <button class="btn-admin" (click)="goToLogin('admin')">
+        <span class="btn-icon">🛡️</span>
+        Admin Login
+      </button>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="floating-card fc1">📄 Research Paper</div>
+    <div class="floating-card fc2">🌐 12 Languages</div>
+    <div class="floating-card fc3">✅ Safety Verified</div>
+    <div class="floating-card fc4">🔍 0% Plagiarism</div>
+  </div>
+</section>
+
+<!-- ── Features ───────────────────────────────── -->
+<section class="features">
+  <div class="features-header">
+    <h2>Platform Highlights</h2>
+    <p>Everything you need for multilingual research submission and review</p>
+  </div>
+
+  <div class="features-grid">
+    @for (feature of features; track feature.title) {
+      <div class="feature-card">
+        <div class="feature-icon">{{ feature.icon }}</div>
+        <h3>{{ feature.title }}</h3>
+        <p>{{ feature.description }}</p>
+      </div>
+    }
+  </div>
+</section>
+
+<!-- ── Footer ─────────────────────────────────── -->
+<footer class="footer">
+  <p>AMRSP &copy; 2026 &nbsp;·&nbsp; Capstone Project</p>
+</footer>

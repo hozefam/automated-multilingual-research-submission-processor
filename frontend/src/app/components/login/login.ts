@@ -1,24 +1,45 @@
-import { Component, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { AuthService, UserRole } from '../../services/auth.service';
+import { Component, OnInit, signal } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   username = '';
   password = '';
+  selectedRole = signal<UserRole>('user');
   errorMessage = signal('');
 
-  constructor(private auth: AuthService) {}
+  constructor(
+    private auth: AuthService,
+    private route: ActivatedRoute,
+  ) {}
+
+  ngOnInit(): void {
+    const role = this.route.snapshot.queryParamMap.get('role');
+    if (role === 'admin' || role === 'user') {
+      this.selectedRole.set(role);
+    }
+  }
+
+  onRoleChange(role: UserRole): void {
+    this.selectedRole.set(role);
+    this.username = '';
+    this.password = '';
+    this.errorMessage.set('');
+  }
 
   onSubmit(): void {
-    const success = this.auth.login(this.username.trim(), this.password);
+    const success = this.auth.loginAsRole(this.username.trim(), this.password, this.selectedRole());
     if (!success) {
-      this.errorMessage.set('Invalid username or password.');
+      const label = this.selectedRole() === 'admin' ? 'admin' : 'user';
+      this.errorMessage.set(`Invalid ${label} credentials.`);
     }
   }
 }

@@ -14,25 +14,141 @@
 .login-card {
   background: #ffffff;
   border-radius: 12px;
-  padding: 48px 40px;
+  padding: 40px 40px 48px;
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 }
 
+/* Back link */
+.back-link {
+  display: inline-block;
+  color: #6b7eab;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 20px;
+  transition: color 0.2s;
+}
+.back-link:hover {
+  color: #0f3460;
+}
+
 .login-title {
-  font-size: 1.8rem;
-  font-weight: 700;
+  font-size: 1.7rem;
+  font-weight: 800;
   color: #1a1a2e;
-  margin: 0 0 4px;
+  margin: 0 0 20px;
   text-align: center;
 }
 
+/* Role selector */
+.role-selector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.role-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #555;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    color 0.2s;
+  user-select: none;
+}
+
+.role-option input[type='radio'] {
+  display: none;
+}
+
+.role-option.active {
+  border-color: #0f3460;
+  background: #eef2ff;
+  color: #0f3460;
+}
+
+.role-icon {
+  font-size: 1.1rem;
+}
+
+/* Subtitle */
 .login-subtitle {
   text-align: center;
   color: #666;
-  margin: 0 0 32px;
+  margin: 0 0 24px;
   font-size: 0.9rem;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #333;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  border-color: #0f3460;
+}
+
+.error-message {
+  color: #e74c3c;
+  font-size: 0.85rem;
+  margin: -8px 0 16px;
+}
+
+.btn-login {
+  width: 100%;
+  padding: 13px;
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.2s;
+}
+
+.btn-login:hover {
+  background: #1b5e20;
+}
+
+.btn-login.admin-btn {
+  background: #1a237e;
+}
+
+.btn-login.admin-btn:hover {
+  background: #0d1757;
 }
 
 .form-group {

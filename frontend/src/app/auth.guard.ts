@@ -1,6 +1,7 @@
-import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
 import { AuthService, UserRole } from './services/auth.service';
+import { CanActivateFn, Router } from '@angular/router';
+
+import { inject } from '@angular/core';
 
 export const authGuard = (role: UserRole): CanActivateFn => {
   return () => {
@@ -11,7 +12,7 @@ export const authGuard = (role: UserRole): CanActivateFn => {
       return true;
     }
 
-    router.navigate(['/login']);
+    router.navigate(['/']);
     return false;
   };
 };
