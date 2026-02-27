@@ -20,6 +20,7 @@
     <PackageReference Include="Microsoft.SemanticKernel.Process.Core" Version="1.72.0-alpha" />
     <PackageReference Include="Microsoft.SemanticKernel.Process.LocalRuntime" Version="1.72.0-alpha" />
     <PackageReference Include="Tesseract" Version="5.2.0" />
+    <PackageReference Include="PdfPig" Version="0.1.13" />
 
     <!-- Volatile (in-memory) Vector Store – VolatileVectorStore ships in Microsoft.SemanticKernel core. -->
     <!-- TODO: Swap to Microsoft.SemanticKernel.Connectors.InMemory stable release for SK sprint.   -->
