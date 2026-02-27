@@ -8,21 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
-    <PackageReference Include="Microsoft.SemanticKernel.Plugins.Memory" Version="1.72.0-alpha" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.12.48" />
-
-    <!-- Semantic Kernel – Core (Semantic Functions, Native Functions, Plugins, Filters, Memory) -->
-    <PackageReference Include="Microsoft.SemanticKernel" Version="1.72.0" />
-
-    <!-- Agent Framework – ChatCompletionAgent -->
-    <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" Version="1.72.0" />
-
-    <!-- Process Framework – KernelProcess, KernelProcessStep (alpha/experimental) -->
-    <PackageReference Include="Microsoft.SemanticKernel.Process.Core" Version="1.72.0-alpha" />
-    <PackageReference Include="Microsoft.SemanticKernel.Process.LocalRuntime" Version="1.72.0-alpha" />
-
-    <!-- Azure Document Intelligence – AI-powered PDF reading (no local parser) -->
-    <PackageReference Include="Azure.AI.DocumentIntelligence" Version="1.0.0" />
   </ItemGroup>
 
 </Project>
