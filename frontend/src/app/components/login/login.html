@@ -36,6 +36,20 @@
       <strong>{{ selectedRole() === 'admin' ? 'Administrator' : 'User' }}</strong>
     </p>
 
+    <!-- Demo credentials hint -->
+    <div class="demo-hint">
+      <span class="demo-hint-label">🔑 Demo credentials</span>
+      @if (selectedRole() === 'admin') {
+        <span class="demo-hint-creds"
+          >username: <code>admin</code> &nbsp;·&nbsp; password: <code>admin</code></span
+        >
+      } @else {
+        <span class="demo-hint-creds"
+          >username: <code>user</code> &nbsp;·&nbsp; password: <code>user</code></span
+        >
+      }
+    </div>
+
     <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
       <div class="form-group">
         <label for="username">Username</label>

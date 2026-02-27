@@ -151,6 +151,37 @@
   background: #0d1757;
 }
 
+/* Demo hint */
+.demo-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #f0f4ff;
+  border: 1px dashed #b0bde8;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  font-size: 0.8rem;
+}
+
+.demo-hint-label {
+  font-weight: 700;
+  color: #3949ab;
+}
+
+.demo-hint-creds {
+  color: #555;
+}
+
+.demo-hint-creds code {
+  background: #dde4f8;
+  color: #1a237e;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+
 .form-group {
   margin-bottom: 20px;
 }
