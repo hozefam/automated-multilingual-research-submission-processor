@@ -1,6 +1,59 @@
 @backend_HostAddress = http://localhost:5091
 
-GET {{backend_HostAddress}}/weatherforecast/
+# ── Health ─────────────────────────────────────────────────────────────────
+# GET /api/health  – returns version, status, and UTC timestamp
+
+GET {{backend_HostAddress}}/api/health
+Accept: application/json
+
+###
+
+# ── Pipeline Steps ─────────────────────────────────────────────────────────
+# GET /api/documents/pipeline-steps  – lists all 7 pipeline steps with metadata
+
+GET {{backend_HostAddress}}/api/documents/pipeline-steps
+Accept: application/json
+
+###
+
+# ── Process Document ───────────────────────────────────────────────────────
+# POST /api/documents/process  – upload a PDF and run the full AI pipeline
+# Replace <path-to-file>.pdf with an actual PDF path
+
+POST {{backend_HostAddress}}/api/documents/process
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="sample.pdf"
+Content-Type: application/pdf
+
+< ./sample.pdf
+--boundary--
+
+###
+
+# ── Ask a Question ─────────────────────────────────────────────────────────
+# POST /api/documents/{documentId}/ask  – RAG-based Q&A on a processed document
+# Replace {documentId} with the documentId returned by /process
+
+@documentId = abc123def456
+
+POST {{backend_HostAddress}}/api/documents/{{documentId}}/ask
+Content-Type: application/json
+Accept: application/json
+
+{
+  "documentId": "{{documentId}}",
+  "question": "What are the main contributions of this paper?"
+}
+
+###
+
+# ── OpenAPI / Scalar (browser) ─────────────────────────────────────────────
+# OpenAPI JSON spec:    {{backend_HostAddress}}/openapi/v1.json
+# Scalar interactive UI: {{backend_HostAddress}}/scalar/v1
+
+GET {{backend_HostAddress}}/openapi/v1.json
 Accept: application/json
 
 ###
