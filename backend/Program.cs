@@ -1,6 +1,7 @@
 using Backend.Agents;
 using Backend.Endpoints;
 using Backend.Pipeline;
+using Backend.Plugins;
 using Backend.Storage;
 using Microsoft.SemanticKernel;
 using Scalar.AspNetCore;
@@ -39,6 +40,9 @@ builder.Services.AddCors(options =>
     });
 });
 
+// ── SK Plugins (registered in DI so Kernel can resolve them) ────────────────
+builder.Services.AddSingleton<OcrPlugin>();
+
 // ── Semantic Kernel ───────────────────────────────────────────────────────────
 // Kernel – registered as singleton; pipeline services can inject it later.
 builder.Services.AddSingleton<Kernel>(sp =>
@@ -59,6 +63,10 @@ builder.Services.AddSingleton<Kernel>(sp =>
     // Volatile (in-memory) vector store:
     // TODO (SK sprint): builder.Services.AddVolatileVectorStore();
     //   Requires resolving correct extension package. RagAgent/QnAAgent will consume IVectorStore.
+
+    // Register SK plugins
+    kBuilder.Plugins.AddFromObject(sp.GetRequiredService<OcrPlugin>(), "OcrPlugin");
+
     return kBuilder.Build();
 });
 
