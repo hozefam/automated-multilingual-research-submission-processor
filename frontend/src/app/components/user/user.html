@@ -14,15 +14,6 @@
 
   <!-- Main Content -->
   <main class="main-content">
-    <!-- Hero -->
-    <div class="hero-card user-hero">
-      <h2>Research Submission</h2>
-      <p>
-        Upload your PDF research paper and let AMRSP automatically extract, analyse and index it
-        through our AI-powered pipeline.
-      </p>
-    </div>
-
     <!-- Upload + Pipeline -->
     <div class="submission-layout">
       <!-- LEFT: Upload zone -->
@@ -126,14 +117,11 @@
 
       <!-- RIGHT: Pipeline Steps -->
       <section class="pipeline-panel">
-        <h3 class="panel-title">⚙️ Processing Pipeline</h3>
-        <p class="pipeline-subtitle">
-          Each uploaded document is automatically run through the following AI pipeline:
-        </p>
+        <h3 class="panel-title">⚙️ Pipeline</h3>
 
         <ol class="pipeline-steps">
           @for (step of steps(); track step.id) {
-            <li class="pipeline-step" [class]="step.state">
+            <li class="pipeline-step" [class]="step.state" [title]="step.description">
               <div class="step-indicator">
                 @if (step.state === 'done') {
                   <span class="step-check">✓</span>
@@ -157,10 +145,10 @@
                     <span class="step-badge error">Failed</span>
                   }
                 </div>
-                <p class="step-desc">{{ step.description }}</p>
                 @if (step.state === 'error' && step.detail) {
                   <p class="step-detail">{{ step.detail }}</p>
                 }
+                <p class="step-tooltip">{{ step.description }}</p>
               </div>
             </li>
           }
