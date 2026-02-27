@@ -93,44 +93,397 @@
   font-size: 0.95rem;
 }
 
-/* Cards */
-.cards-grid {
+/* ── Submission Layout ──────────────────────────── */
+.submission-layout {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 20px;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  align-items: start;
 }
 
-.card {
+.panel-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1b3a1b;
+  margin: 0 0 18px;
+}
+
+/* ── Upload Panel ───────────────────────────────── */
+.upload-panel {
   background: #fff;
-  border-radius: 10px;
-  padding: 28px 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
+  border-radius: 14px;
+  padding: 28px 28px 24px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.drop-zone {
+  border: 2px dashed #a5d6a7;
+  border-radius: 12px;
+  padding: 36px 24px;
+  text-align: center;
   cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+  background: #f9fdf9;
 }
 
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+.drop-zone:hover {
+  border-color: #2e7d32;
+  background: #f1f8f1;
 }
 
-.card-icon {
-  font-size: 2rem;
+.drop-zone.drag-over {
+  border-color: #1b5e20;
+  background: #e8f5e9;
+}
+
+.drop-zone.has-file {
+  border-style: solid;
+  border-color: #2e7d32;
+  background: #f1f8f1;
+  padding: 20px 24px;
+}
+
+.drop-zone-empty .drop-icon {
+  font-size: 2.6rem;
   margin-bottom: 12px;
 }
 
-.card h3 {
-  font-size: 1rem;
-  font-weight: 700;
+.drop-primary {
+  font-size: 0.95rem;
+  font-weight: 600;
   color: #1b5e20;
-  margin: 0 0 8px;
+  margin: 0 0 4px;
 }
 
-.card p {
+.drop-secondary {
+  font-size: 0.85rem;
+  color: #555;
+  margin: 0 0 10px;
+}
+
+.drop-hint {
+  font-size: 0.75rem;
+  color: #999;
+  background: #eee;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+}
+
+.file-icon {
+  font-size: 2.2rem;
+  flex-shrink: 0;
+}
+
+.file-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.file-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1b3a1b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-size {
+  font-size: 0.78rem;
+  color: #888;
+}
+
+.btn-clear {
+  background: none;
+  border: 1.5px solid #ccc;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  color: #888;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.btn-clear:hover {
+  border-color: #e53935;
+  color: #e53935;
+}
+
+.btn-upload {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, #2e7d32, #4caf50);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition:
+    opacity 0.2s,
+    background 0.2s;
+}
+
+.btn-upload:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-upload.processing {
+  background: linear-gradient(135deg, #1565c0, #1e88e5);
+  cursor: not-allowed;
+}
+
+.btn-upload.done {
+  background: linear-gradient(135deg, #6a1b9a, #ab47bc);
+  cursor: pointer;
+}
+
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2.5px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+}
+
+.progress-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.progress-bar-track {
+  flex: 1;
+  height: 7px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2e7d32, #66bb6a);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.progress-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #2e7d32;
+  width: 36px;
+  text-align: right;
+}
+
+.result-box {
+  border-radius: 10px;
+  padding: 20px 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.result-box.success {
+  background: #e8f5e9;
+  border: 1.5px solid #a5d6a7;
+}
+
+.result-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.result-title {
+  font-weight: 700;
+  color: #1b5e20;
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+}
+
+.result-sub {
+  font-size: 0.82rem;
+  color: #555;
+  margin: 0;
+}
+
+/* ── Pipeline Panel ─────────────────────────────── */
+.pipeline-panel {
+  background: #fff;
+  border-radius: 14px;
+  padding: 28px 28px 24px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
+}
+
+.pipeline-subtitle {
   font-size: 0.85rem;
   color: #666;
+  margin: -10px 0 20px;
+  line-height: 1.5;
+}
+
+.pipeline-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pipeline-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1.5px solid transparent;
+  transition:
+    background 0.25s,
+    border-color 0.25s;
+}
+
+.pipeline-step.pending {
+  background: #fafafa;
+}
+.pipeline-step.active {
+  background: #e3f2fd;
+  border-color: #90caf9;
+}
+.pipeline-step.done {
+  background: #f1f8f1;
+  border-color: #a5d6a7;
+}
+
+.step-indicator {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.pipeline-step.pending .step-indicator {
+  background: #e0e0e0;
+  color: #888;
+}
+.pipeline-step.active .step-indicator {
+  background: #1e88e5;
+}
+.pipeline-step.done .step-indicator {
+  background: #2e7d32;
+  color: #fff;
+}
+
+.step-check {
+  color: #fff;
+}
+
+.step-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+}
+
+.step-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 3px;
+}
+
+.step-icon {
+  font-size: 1rem;
+}
+
+.step-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1a2a1a;
+}
+
+.pipeline-step.pending .step-title {
+  color: #aaa;
+  font-weight: 600;
+}
+
+.step-badge {
+  margin-left: auto;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.step-badge.active {
+  background: #1e88e5;
+  color: #fff;
+}
+.step-badge.done {
+  background: #2e7d32;
+  color: #fff;
+}
+
+.step-desc {
+  font-size: 0.78rem;
+  color: #777;
   margin: 0;
   line-height: 1.5;
+}
+
+.pipeline-step.pending .step-desc {
+  color: #ccc;
+}
+
+/* ── Spinner keyframe ───────────────────────────── */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Responsive ─────────────────────────────────── */
+@media (max-width: 900px) {
+  .submission-layout {
+    grid-template-columns: 1fr;
+  }
 }
