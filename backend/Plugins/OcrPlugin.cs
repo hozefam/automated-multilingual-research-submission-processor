@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Microsoft.SemanticKernel;
+using Tesseract;
 
 namespace Backend.Plugins;
 
@@ -10,56 +11,102 @@ namespace Backend.Plugins;
 /// </summary>
 [Description(
     "Optical Character Recognition plugin powered by Tesseract. " +
-    "Extracts plain text from PDF and image files so downstream agents " +
+    "Extracts plain text from image files so downstream agents " +
     "can operate on the document content.")]
 public sealed class OcrPlugin
 {
-    private readonly ILogger<OcrPlugin> _logger;
+    private static readonly HashSet<string> ImageExtensions =
+        new(StringComparer.OrdinalIgnoreCase) { "png", "jpg", "jpeg", "tif", "tiff", "bmp", "gif", "webp" };
 
-    public OcrPlugin(ILogger<OcrPlugin> logger) => _logger = logger;
+    private readonly ILogger<OcrPlugin> _logger;
+    private readonly string _tessdataPath;
+    private readonly string _language;
+
+    public OcrPlugin(ILogger<OcrPlugin> logger, IConfiguration config)
+    {
+        _logger = logger;
+        _tessdataPath = config["Tesseract:TessdataPath"] ?? "tessdata";
+        _language = config["Tesseract:Language"] ?? "eng";
+    }
 
     /// <summary>
-    /// Extracts plain text from a PDF or image file using Tesseract OCR.
+    /// Extracts plain text from an image file using Tesseract OCR.
+    /// PDF files are not supported without a PDF-to-image renderer and will
+    /// return an empty string with a diagnostic log message.
     /// </summary>
     /// <param name="fileBytes">Raw bytes of the file to process.</param>
     /// <param name="fileName">Original file name (used to determine format).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>
-    /// Extracted plain text, or an empty string if OCR is not yet implemented.
-    /// </returns>
+    /// <returns>Extracted plain text, or an empty string on failure.</returns>
     [KernelFunction("ExtractTextFromFile")]
     [Description(
-        "Runs Tesseract OCR on the supplied file bytes and returns the extracted plain text. " +
-        "Supports PDF and common image formats (PNG, JPEG, TIFF). " +
-        "Returns an empty string when tessdata is unavailable.")]
+        "Runs Tesseract OCR on the supplied image file bytes and returns the extracted plain text. " +
+        "Supports PNG, JPEG, TIFF, BMP and similar raster formats. " +
+        "Returns an empty string when tessdata is unavailable or the format is unsupported.")]
     public Task<string> ExtractTextFromFileAsync(
-        [Description("Raw bytes of the PDF or image file to process")] byte[] fileBytes,
-        [Description("Original file name including extension, e.g. paper.pdf")] string fileName,
+        [Description("Raw bytes of the image file to process")] byte[] fileBytes,
+        [Description("Original file name including extension, e.g. scan.png")] string fileName,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation(
-            "[OcrPlugin] ExtractTextFromFile invoked for '{FileName}' ({Bytes} bytes). " +
-            "Tesseract OCR is stubbed — returning empty string.",
+            "[OcrPlugin] ExtractTextFromFile invoked for '{FileName}' ({Bytes} bytes).",
             fileName, fileBytes.Length);
 
-        // ── TODO (OCR sprint) ─────────────────────────────────────────────────
-        // 1. For image files (PNG, JPEG, TIFF):
-        //      using var engine = new TesseractEngine(tessdataPath, "eng", EngineMode.Default);
-        //      using var img    = Pix.LoadFromMemory(fileBytes);
-        //      using var page   = engine.Process(img);
-        //      return page.GetText();
-        //
-        // 2. For PDF files, first convert each page to an image:
-        //      Use PdfPig (UglyToad.PdfPig) or Docnet.Core to render pages to bitmaps,
-        //      then feed each bitmap into TesseractEngine above, and concatenate results.
-        //
-        // 3. tessdata path should come from IConfiguration["Tesseract:TessdataPath"]
-        //    and language from IConfiguration["Tesseract:Language"] (default: "eng").
-        //
-        // 4. Wrap in try/catch so a missing tessdata folder degrades gracefully
-        //    rather than crashing the whole pipeline.
-        // ─────────────────────────────────────────────────────────────────────
+        var ext = Path.GetExtension(fileName).TrimStart('.').ToLowerInvariant();
 
-        return Task.FromResult(string.Empty);
+        if (ext == "pdf")
+        {
+            _logger.LogWarning(
+                "[OcrPlugin] PDF rendering requires a dedicated library (e.g. PdfPig). " +
+                "Only pure Tesseract is enabled — skipping '{FileName}'.",
+                fileName);
+            return Task.FromResult(string.Empty);
+        }
+
+        if (!ImageExtensions.Contains(ext))
+        {
+            _logger.LogWarning(
+                "[OcrPlugin] Unsupported file extension '{Ext}' for '{FileName}' — skipping.",
+                ext, fileName);
+            return Task.FromResult(string.Empty);
+        }
+
+        return Task.FromResult(ExtractFromImageBytes(fileBytes, fileName));
+    }
+
+    // ── private ──────────────────────────────────────────────────────────────
+
+    private string ExtractFromImageBytes(byte[] imageBytes, string fileName)
+    {
+        try
+        {
+            using var engine = new TesseractEngine(_tessdataPath, _language, EngineMode.Default);
+            using var img = Pix.LoadFromMemory(imageBytes);
+            using var page = engine.Process(img);
+
+            var text = page.GetText();
+            var confidence = page.GetMeanConfidence();
+
+            _logger.LogInformation(
+                "[OcrPlugin] OCR complete for '{FileName}': {Chars} chars, confidence {Confidence:P0}.",
+                fileName, text.Length, confidence);
+
+            return text ?? string.Empty;
+        }
+        catch (TesseractException tex)
+        {
+            _logger.LogWarning(tex,
+                "[OcrPlugin] Tesseract failed for '{FileName}'. " +
+                "Ensure tessdata is present at '{TessdataPath}' and language '{Language}' is installed.",
+                fileName, _tessdataPath, _language);
+            return string.Empty;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "[OcrPlugin] Unexpected error during OCR for '{FileName}' — returning empty string.",
+                fileName);
+            return string.Empty;
+        }
     }
 }
