@@ -20,6 +20,9 @@
     <PackageReference Include="Microsoft.SemanticKernel.Process.Core" Version="1.72.0-alpha" />
     <PackageReference Include="Microsoft.SemanticKernel.Process.LocalRuntime" Version="1.72.0-alpha" />
 
+    <!-- Volatile (in-memory) Vector Store – VolatileVectorStore ships in Microsoft.SemanticKernel core. -->
+    <!-- TODO: Swap to Microsoft.SemanticKernel.Connectors.InMemory stable release for SK sprint.   -->
+
   </ItemGroup>
 
 </Project>

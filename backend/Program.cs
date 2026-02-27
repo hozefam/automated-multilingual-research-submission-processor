@@ -1,6 +1,7 @@
 using Backend.Agents;
 using Backend.Endpoints;
 using Backend.Pipeline;
+using Backend.Storage;
 using Microsoft.SemanticKernel;
 using Scalar.AspNetCore;
 
@@ -55,8 +56,16 @@ builder.Services.AddSingleton<Kernel>(sp =>
         apiKey: config["AzureOpenAI:ApiKey"]
             ?? throw new InvalidOperationException("AzureOpenAI:ApiKey is not configured."));
 
+    // Volatile (in-memory) vector store:
+    // TODO (SK sprint): builder.Services.AddVolatileVectorStore();
+    //   Requires resolving correct extension package. RagAgent/QnAAgent will consume IVectorStore.
     return kBuilder.Build();
 });
+
+// ── Document Store (singleton in-memory persistence) ────────────────────────────────────
+// Stores pipeline results, audit log and HITL corrections for the lifetime of the process.
+// TODO: Replace with EF Core + SQLite or Azure Cosmos DB for durable persistence.
+builder.Services.AddSingleton<IDocumentStore, DocumentStore>();
 
 // ── Agent Services (11 pipeline agents) ───────────────────────────────────────────────
 builder.Services.AddScoped<IIngestionAgent, IngestionAgent>();

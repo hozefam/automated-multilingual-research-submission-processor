@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Backend.Models;
+using Backend.Storage;
 
 namespace Backend.Agents;
 
@@ -16,12 +17,14 @@ public class HumanFeedbackAgent : IHumanFeedbackAgent
 {
     private const double HitlConfidenceThreshold = 0.25;
 
+    private readonly IDocumentStore _store;
     private readonly ILogger<HumanFeedbackAgent> _logger;
 
-    // In-memory correction store (replace with durable storage)
-    private static readonly Dictionary<string, List<FlaggedItem>> _corrections = [];
-
-    public HumanFeedbackAgent(ILogger<HumanFeedbackAgent> logger) => _logger = logger;
+    public HumanFeedbackAgent(IDocumentStore store, ILogger<HumanFeedbackAgent> logger)
+    {
+        _store = store;
+        _logger = logger;
+    }
 
     public async Task<StepResult<HumanFeedbackResult>> EvaluateAsync(
         string documentId, PipelineStepSummary summary, CancellationToken ct = default)
@@ -85,15 +88,16 @@ public class HumanFeedbackAgent : IHumanFeedbackAgent
             "[HumanFeedbackAgent] Admin correction for '{DocumentId}', field '{Field}': {Correction}",
             documentId, field, correction);
 
-        await Task.Delay(50, ct); // TODO: persist to Azure Table Storage + update SK Memory
+        await Task.Delay(50, ct); // TODO: feed correction back into SK Memory for learning
 
-        var correctedItem = new FlaggedItem(field, "Admin-corrected", 1.0, correction);
+        _store.SaveCorrection(documentId, field, correction);
 
-        if (!_corrections.TryGetValue(documentId, out var list))
-        {
-            list = [];
-            _corrections[documentId] = list;
-        }
-        list.Add(correctedItem);
+        _store.AddAuditEntry(new AuditLogEntry(
+            Id: Guid.NewGuid().ToString("N")[..8],
+            DocumentId: documentId,
+            Action: $"HITL correction applied: {field}",
+            Actor: "admin",
+            Details: correction,
+            Timestamp: DateTime.UtcNow));
     }
 }

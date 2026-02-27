@@ -1,6 +1,7 @@
 using Backend.Agents;
 using Backend.Models;
 using Backend.Pipeline;
+using Backend.Storage;
 
 namespace Backend.Endpoints;
 
@@ -35,6 +36,53 @@ public static class DocumentEndpoints
         .DisableAntiforgery()
         .WithName("ProcessDocument")
         .WithSummary("Upload a PDF and run the full AI processing pipeline");
+
+        // ── GET /api/documents ─────────────────────────────────────────────────
+        // Returns a summary list of all processed documents (newest first).
+        group.MapGet("/", (IDocumentStore store) =>
+        {
+            var summaries = store.GetAllResults().Select(r => new
+            {
+                r.DocumentId,
+                r.FileName,
+                r.OverallSuccess,
+                r.TotalElapsedMs,
+                RequiresReview = r.HumanFeedback.Data?.RequiresHumanReview ?? false,
+                IsResolved = r.HumanFeedback.Data?.IsResolved ?? false,
+                OverallConfidence = r.HumanFeedback.Data?.OverallConfidence ?? 1.0,
+                FlaggedItems = r.HumanFeedback.Data?.FlaggedItems ?? [],
+                ProcessedAt = r.Ingestion.Data?.ReceivedAt ?? DateTime.UtcNow,
+            });
+            return Results.Ok(summaries);
+        })
+        .WithName("ListDocuments")
+        .WithSummary("List all processed documents with their pipeline status");
+
+        // ── GET /api/documents/{documentId} ───────────────────────────────────
+        // Returns the full pipeline result for a single document.
+        group.MapGet("/{documentId}", (string documentId, IDocumentStore store) =>
+        {
+            var result = store.GetResult(documentId);
+            return result is null
+                ? Results.NotFound(new { error = $"Document '{documentId}' not found." })
+                : Results.Ok(result);
+        })
+        .WithName("GetDocument")
+        .WithSummary("Get full pipeline result for a document");
+
+        // ── GET /api/documents/{documentId}/audit ─────────────────────────────
+        // Returns the audit log for a specific document.
+        group.MapGet("/{documentId}/audit", (string documentId, IDocumentStore store) =>
+            Results.Ok(store.GetAuditLog(documentId)))
+        .WithName("GetDocumentAuditLog")
+        .WithSummary("Get audit log entries for a document");
+
+        // ── GET /api/documents/audit ──────────────────────────────────────────
+        // Returns the full audit log across all documents (newest first).
+        group.MapGet("/audit", (IDocumentStore store) =>
+            Results.Ok(store.GetAuditLog()))
+        .WithName("GetAllAuditLog")
+        .WithSummary("Get the full audit log across all documents");
 
         // ── GET /api/documents/pipeline-steps ─────────────────────────────────
         // Returns metadata about each pipeline step — useful for frontend display.

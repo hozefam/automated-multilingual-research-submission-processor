@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Backend.Agents;
 using Backend.Models;
+using Backend.Storage;
 
 namespace Backend.Pipeline;
 
@@ -36,6 +37,7 @@ public class DocumentPipelineOrchestrator
     private readonly ISummaryAgent _summaryAgent;
     private readonly IQnAAgent _qnAAgent;
     private readonly IHumanFeedbackAgent _humanFeedbackAgent;
+    private readonly IDocumentStore _store;
     private readonly ILogger<DocumentPipelineOrchestrator> _logger;
 
     public DocumentPipelineOrchestrator(
@@ -50,6 +52,7 @@ public class DocumentPipelineOrchestrator
         ISummaryAgent summaryAgent,
         IQnAAgent qnAAgent,
         IHumanFeedbackAgent humanFeedbackAgent,
+        IDocumentStore store,
         ILogger<DocumentPipelineOrchestrator> logger)
     {
         _ingestionAgent = ingestionAgent;
@@ -63,6 +66,7 @@ public class DocumentPipelineOrchestrator
         _summaryAgent = summaryAgent;
         _qnAAgent = qnAAgent;
         _humanFeedbackAgent = humanFeedbackAgent;
+        _store = store;
         _logger = logger;
     }
 
@@ -192,7 +196,7 @@ public class DocumentPipelineOrchestrator
             overallSuccess ? "COMPLETE" : "COMPLETE WITH ERRORS",
             documentId, totalSw.ElapsedMilliseconds);
 
-        return new PipelineResult(
+        var pipelineResult = new PipelineResult(
             DocumentId: documentId,
             FileName: fileName,
             OverallSuccess: overallSuccess,
@@ -209,6 +213,46 @@ public class DocumentPipelineOrchestrator
             HumanFeedback: humanFeedbackResult,
             TotalElapsedMs: totalSw.ElapsedMilliseconds
         );
+
+        // Persist result so admin endpoints can query it later
+        _store.SaveResult(pipelineResult);
+
+        // Append per-step audit entries
+        var steps = new (string Name, bool Success, string? Error)[]
+        {
+            ("Ingestion Agent",            ingestionResult.Success,       ingestionResult.Error),
+            ("Pre-process Agent",          preProcessResult.Success,      preProcessResult.Error),
+            ("Translation Agent",          translationResult.Success,     translationResult.Error),
+            ("Extraction Agent",           extractionResult.Success,      extractionResult.Error),
+            ("Validation Agent",           validationResult.Success,      validationResult.Error),
+            ("Content Safety Agent",       safetyResult.Success,          safetyResult.Error),
+            ("Plagiarism Detection Agent", plagiarismResult.Success,      plagiarismResult.Error),
+            ("RAG Agent",                  ragResult.Success,             ragResult.Error),
+            ("Summary Agent",              summaryResult.Success,         summaryResult.Error),
+            ("Q&A Agent",                  qnaResult.Success,             qnaResult.Error),
+            ("Human Feedback Agent",       humanFeedbackResult.Success,   humanFeedbackResult.Error),
+        };
+
+        foreach (var (name, success, error) in steps)
+        {
+            _store.AddAuditEntry(new AuditLogEntry(
+                Id: Guid.NewGuid().ToString("N")[..8],
+                DocumentId: documentId,
+                Action: $"{name} {(success ? "completed" : "failed")}",
+                Actor: "system",
+                Details: success ? null : error,
+                Timestamp: DateTime.UtcNow));
+        }
+
+        _store.AddAuditEntry(new AuditLogEntry(
+            Id: Guid.NewGuid().ToString("N")[..8],
+            DocumentId: documentId,
+            Action: overallSuccess ? "Pipeline completed" : "Pipeline completed with errors",
+            Actor: "system",
+            Details: $"{totalSw.ElapsedMilliseconds}ms total",
+            Timestamp: DateTime.UtcNow));
+
+        return pipelineResult;
     }
 
     /// <summary>Wraps a pipeline step – exceptions are captured rather than thrown.</summary>
