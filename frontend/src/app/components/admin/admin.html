@@ -12,200 +12,157 @@
     </div>
   </header>
 
-  <!-- Tab Navigation -->
-  <nav class="admin-tabs">
-    <button [class.active]="activeTab() === 'dashboard'" (click)="setTab('dashboard')">
-      &#128200; Dashboard
-    </button>
-    <button [class.active]="activeTab() === 'hitl'" (click)="setTab('hitl')">
-      &#128100; HITL Review
-    </button>
-    <button [class.active]="activeTab() === 'audit'" (click)="setTab('audit')">
-      &#128221; Audit Log
-    </button>
-    <button [class.active]="activeTab() === 'qna'" (click)="setTab('qna')">
-      &#128172; Q&amp;A
-    </button>
-  </nav>
-
-  <!-- Main Content -->
   <main class="main-content">
-    <!-- ── Dashboard ─────────────────────────────────────────────────── -->
-    @if (activeTab() === 'dashboard') {
-      <div class="hero-card admin-hero">
-        <h2>Admin Dashboard</h2>
-        <p>
-          You are logged in as <strong>Administrator</strong>. Manage the research submission system
-          from here.
-        </p>
-      </div>
-      <div class="cards-grid">
-        <div class="card" (click)="setTab('hitl')" style="cursor: pointer">
-          <div class="card-icon">&#128100;</div>
-          <h3>HITL Review</h3>
-          <p>Review flagged submissions requiring human oversight (confidence &lt; 25%).</p>
-        </div>
-        <div class="card" (click)="setTab('audit')" style="cursor: pointer">
-          <div class="card-icon">&#128221;</div>
-          <h3>Audit Log</h3>
-          <p>Track all system and admin actions for transparency and accountability.</p>
-        </div>
-        <div class="card" (click)="setTab('qna')" style="cursor: pointer">
-          <div class="card-icon">&#128172;</div>
-          <h3>Q&amp;A</h3>
-          <p>Ask questions about any processed submission via the RAG-powered Q&amp;A agent.</p>
-        </div>
+
+    <!-- Action message -->
+    @if (actionMessage()) {
+      <div
+        class="alert"
+        [class.alert-success]="actionMessage()!.type === 'success'"
+        [class.alert-error]="actionMessage()!.type === 'error'"
+      >
+        {{ actionMessage()!.text }}
       </div>
     }
 
-    <!-- ── HITL Review ───────────────────────────────────────────────── -->
-    @if (activeTab() === 'hitl') {
+    <!-- Stats bar -->
+    <div class="stats-bar">
+      <div class="stat-card stat-pending">
+        <div class="stat-count">{{ awaitingReview().length }}</div>
+        <div class="stat-label">Awaiting Review</div>
+      </div>
+      <div class="stat-card stat-processed">
+        <div class="stat-count">{{ processed().length }}</div>
+        <div class="stat-label">Processed</div>
+      </div>
+      <div class="stat-card stat-total">
+        <div class="stat-count">{{ documents().length }}</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <button class="btn-refresh" (click)="loadDocuments()" [disabled]="loading()">
+        &#8635; Refresh
+      </button>
+    </div>
+
+    <!-- ── Awaiting Review ──────────────────────────────────────────────── -->
+    <section class="doc-section">
       <div class="section-header">
-        <h2>&#128100; Human-In-The-Loop Review</h2>
-        <p>
-          Submissions flagged by the Human Feedback Agent (confidence below 25% or safety/plagiarism
-          issues).
-        </p>
+        <h2>&#128100; Awaiting Review</h2>
+        <p>Documents flagged by the AI pipeline that require a manual Approve or Reject decision.</p>
       </div>
 
-      @if (hitlMessage()) {
-        <div class="alert alert-success">{{ hitlMessage() }}</div>
+      @if (loading()) {
+        <div class="empty-state">Loading...</div>
+      } @else if (awaitingReview().length === 0) {
+        <div class="empty-state">&#10003; No documents awaiting review.</div>
       }
 
-      @if (pendingReviews().length === 0) {
-        <div class="empty-state">&#10003; No submissions pending review.</div>
-      }
-
-      @for (review of pendingReviews(); track review.documentId) {
-        <div class="review-card" [class.resolved]="review.isResolved">
+      @for (doc of awaitingReview(); track doc.documentId) {
+        <div class="review-card">
           <div class="review-header">
-            <span class="review-doc">&#128196; {{ review.fileName }}</span>
-            <span class="review-id">ID: {{ review.documentId }}</span>
-            <span class="review-confidence" [class.low]="review.overallConfidence < 0.25">
-              Confidence: {{ (review.overallConfidence * 100).toFixed(0) }}%
+            <span class="review-doc">&#128196; {{ doc.fileName }}</span>
+            <span class="review-id mono">{{ doc.documentId }}</span>
+            <span class="review-confidence" [class.low]="doc.overallConfidence < 0.25">
+              Confidence: {{ (doc.overallConfidence * 100).toFixed(0) }}%
             </span>
-            @if (review.isResolved) {
-              <span class="badge-resolved">&#10003; Resolved</span>
-            }
+            <span class="review-date">{{ doc.processedAt | date: 'short' }}</span>
           </div>
 
-          @for (item of review.flaggedItems; track item.field) {
-            <div class="flagged-item">
-              <div class="flagged-field">
-                Field: <strong>{{ item.field }}</strong>
-              </div>
-              <div class="flagged-result">Agent finding: {{ item.agentResult }}</div>
-              @if (item.humanCorrection) {
-                <div class="human-correction">&#10003; Correction: {{ item.humanCorrection }}</div>
-              } @else {
-                <div class="correction-form">
-                  <input
-                    type="text"
-                    placeholder="Enter correction or override..."
-                    [value]="getCorrectionInput(review.documentId, item.field)"
-                    (input)="
-                      setCorrectionInput(review.documentId, item.field, $any($event.target).value)
-                    "
-                    class="correction-input"
-                  />
-                  <button class="btn-apply" (click)="submitCorrection(review, item)">Apply</button>
+          <!-- Flagged items -->
+          @if (doc.flaggedItems.length > 0) {
+            <div class="flagged-list">
+              @for (item of doc.flaggedItems; track item.field) {
+                <div class="flagged-chip">
+                  <span class="chip-field">{{ item.field }}</span>
+                  <span class="chip-detail">{{ item.agentResult }}</span>
                 </div>
               }
             </div>
           }
+
+          <!-- Approve / Reject actions -->
+          <div class="review-actions">
+            <button
+              class="btn-approve"
+              (click)="approve(doc)"
+              [disabled]="isProcessing(doc.documentId)"
+            >
+              &#10003; Approve
+            </button>
+            <div class="reject-group">
+              <input
+                type="text"
+                class="rejection-input"
+                placeholder="Rejection reason (required to reject)"
+                [value]="getRejectionReason(doc.documentId)"
+                (input)="setRejectionReason(doc.documentId, $any($event.target).value)"
+              />
+              <button
+                class="btn-reject"
+                (click)="reject(doc)"
+                [disabled]="isProcessing(doc.documentId)"
+              >
+                &#10007; Reject
+              </button>
+            </div>
+          </div>
         </div>
       }
-    }
+    </section>
 
-    <!-- ── Audit Log ─────────────────────────────────────────────────── -->
-    @if (activeTab() === 'audit') {
+    <!-- ── Processed Documents ──────────────────────────────────────────── -->
+    <section class="doc-section">
       <div class="section-header">
-        <h2>&#128221; Audit Log</h2>
-        <p>All actions performed by the system, agents and administrators are logged here.</p>
+        <h2>&#10003; Processed Documents</h2>
+        <p>Documents that passed the pipeline without flags, or have been actioned by an admin.</p>
       </div>
 
-      <table class="audit-table">
-        <thead>
-          <tr>
-            <th>Timestamp</th>
-            <th>Document ID</th>
-            <th>Action</th>
-            <th>Actor</th>
-            <th>Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (entry of auditLog(); track entry.id) {
+      @if (!loading() && processed().length === 0) {
+        <div class="empty-state">No processed documents yet.</div>
+      }
+
+      @if (processed().length > 0) {
+        <table class="doc-table">
+          <thead>
             <tr>
-              <td class="ts">{{ entry.timestamp | date: 'short' }}</td>
-              <td class="mono">{{ entry.documentId }}</td>
-              <td>{{ entry.action }}</td>
-              <td
-                [class.actor-admin]="entry.actor === 'admin'"
-                [class.actor-system]="entry.actor === 'system'"
-              >
-                {{ entry.actor }}
-              </td>
-              <td class="detail">{{ entry.details }}</td>
+              <th>File</th>
+              <th>Document ID</th>
+              <th>Processed At</th>
+              <th>Pipeline</th>
+              <th>Decision</th>
+              <th>Rejection Reason</th>
             </tr>
-          }
-        </tbody>
-      </table>
-    }
+          </thead>
+          <tbody>
+            @for (doc of processed(); track doc.documentId) {
+              <tr>
+                <td>{{ doc.fileName }}</td>
+                <td class="mono">{{ doc.documentId }}</td>
+                <td>{{ doc.processedAt | date: 'short' }}</td>
+                <td>
+                  <span [class.badge-ok]="doc.overallSuccess" [class.badge-warn]="!doc.overallSuccess">
+                    {{ doc.overallSuccess ? 'OK' : 'Errors' }}
+                  </span>
+                </td>
+                <td>
+                  @if (doc.reviewDecision) {
+                    <span
+                      [class.badge-ok]="doc.reviewDecision.approved"
+                      [class.badge-reject]="!doc.reviewDecision.approved"
+                    >
+                      {{ doc.reviewDecision.approved ? 'Approved' : 'Rejected' }}
+                    </span>
+                  } @else {
+                    <span class="badge-auto">Auto-passed</span>
+                  }
+                </td>
+                <td class="detail">{{ doc.reviewDecision?.rejectionReason ?? '–' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
 
-    <!-- ── Q&A Chat ──────────────────────────────────────────────────── -->
-    @if (activeTab() === 'qna') {
-      <div class="section-header">
-        <h2>&#128172; Document Q&amp;A</h2>
-        <p>
-          Ask questions about any processed submission. Supports multilingual input and conversation
-          history.
-        </p>
-      </div>
-
-      <div class="qna-panel">
-        <div class="qna-setup">
-          <label>Document ID</label>
-          <input
-            type="text"
-            placeholder="e.g. demo-001"
-            [value]="qnaDocumentId()"
-            (input)="qnaDocumentId.set($any($event.target).value)"
-            class="qna-input"
-          />
-        </div>
-
-        <div class="chat-history">
-          @for (msg of qnaHistory(); track $index) {
-            <div
-              class="chat-msg"
-              [class.user]="msg.role === 'user'"
-              [class.agent]="msg.role === 'agent'"
-            >
-              <span class="chat-role">{{ msg.role === 'user' ? 'You' : 'Q&amp;A Agent' }}</span>
-              <span class="chat-text">{{ msg.text }}</span>
-            </div>
-          }
-          @if (qnaLoading()) {
-            <div class="chat-msg agent">
-              <span class="chat-role">Q&amp;A Agent</span
-              ><span class="chat-text typing">&#8226;&#8226;&#8226;</span>
-            </div>
-          }
-        </div>
-
-        <div class="qna-input-row">
-          <input
-            type="text"
-            placeholder="Ask a question about this submission..."
-            [value]="qnaQuestion()"
-            (input)="qnaQuestion.set($any($event.target).value)"
-            (keydown.enter)="askQuestion()"
-            class="qna-input"
-          />
-          <button class="btn-send" (click)="askQuestion()" [disabled]="qnaLoading()">Send</button>
-        </div>
-      </div>
-    }
   </main>
 </div>

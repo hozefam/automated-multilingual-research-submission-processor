@@ -10,6 +10,34 @@ export interface PipelineStepMeta {
   description: string;
 }
 
+export interface FlaggedItemSummary {
+  field: string;
+  agentResult: string;
+  confidence: number;
+  humanCorrection: string | null;
+}
+
+export interface ReviewDecision {
+  documentId: string;
+  approved: boolean;
+  rejectionReason: string | null;
+  reviewedBy: string;
+  decidedAt: string;
+}
+
+export interface DocumentSummary {
+  documentId: string;
+  fileName: string;
+  overallSuccess: boolean;
+  totalElapsedMs: number;
+  requiresReview: boolean;
+  isResolved: boolean;
+  overallConfidence: number;
+  flaggedItems: FlaggedItemSummary[];
+  processedAt: string;
+  reviewDecision?: ReviewDecision;
+}
+
 export interface HealthResponse {
   version: string;
   status: string;
@@ -54,6 +82,21 @@ export class ApiService {
 
   getPipelineSteps(): Observable<PipelineStepMeta[]> {
     return this.http.get<PipelineStepMeta[]>(`${this.baseUrl}/api/documents/pipeline-steps`);
+  }
+
+  getDocuments(): Observable<DocumentSummary[]> {
+    return this.http.get<DocumentSummary[]>(`${this.baseUrl}/api/documents`);
+  }
+
+  submitReview(
+    documentId: string,
+    approved: boolean,
+    rejectionReason?: string,
+  ): Observable<ReviewDecision> {
+    return this.http.post<ReviewDecision>(`${this.baseUrl}/api/documents/${documentId}/review`, {
+      approved,
+      rejectionReason: rejectionReason ?? null,
+    });
   }
 
   uploadDocument(file: File): Observable<PipelineResult> {

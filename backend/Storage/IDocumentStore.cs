@@ -39,4 +39,11 @@ public interface IDocumentStore
 
     /// <summary>Returns all corrections submitted for a document.</summary>
     IReadOnlyList<FlaggedItem> GetCorrections(string documentId);
+    // ── Admin review decisions ────────────────────────────────────────────
+
+    /// <summary>Persists an admin approve/reject decision for a flagged document.</summary>
+    void SaveReviewDecision(ReviewDecision decision);
+
+    /// <summary>Returns the admin review decision for a document, or null if not yet reviewed.</summary>
+    ReviewDecision? GetReviewDecision(string documentId);
 }

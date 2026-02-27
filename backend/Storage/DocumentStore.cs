@@ -5,10 +5,11 @@ namespace Backend.Storage;
 
 /// <summary>
 /// Thread-safe in-memory implementation of <see cref="IDocumentStore"/>.
-/// All state is held in three ConcurrentDictionary instances:
+/// All state is held in four ConcurrentDictionary instances:
 ///   • _results      — full PipelineResult per documentId
 ///   • _auditLog     — list of AuditLogEntry per documentId
 ///   • _corrections  — list of FlaggedItem (admin corrections) per documentId
+///   • _reviews      — admin approve/reject decision per documentId
 ///
 /// Registered as a singleton in DI so all HTTP requests share the same collections.
 /// TODO: Replace with EF Core + SQLite (AddDbContext, SaveChangesAsync) for persistence
@@ -19,6 +20,7 @@ public sealed class DocumentStore : IDocumentStore
     private readonly ConcurrentDictionary<string, PipelineResult> _results = new();
     private readonly ConcurrentDictionary<string, List<AuditLogEntry>> _auditLog = new();
     private readonly ConcurrentDictionary<string, List<FlaggedItem>> _corrections = new();
+    private readonly ConcurrentDictionary<string, ReviewDecision> _reviews = new();
 
     // ── Pipeline results ─────────────────────────────────────────────────────
 
@@ -71,4 +73,12 @@ public sealed class DocumentStore : IDocumentStore
         _corrections.TryGetValue(documentId, out var list)
             ? [.. list]
             : [];
+
+    // ── Admin review decisions ─────────────────────────────────────────────
+
+    public void SaveReviewDecision(ReviewDecision decision) =>
+        _reviews[decision.DocumentId] = decision;
+
+    public ReviewDecision? GetReviewDecision(string documentId) =>
+        _reviews.TryGetValue(documentId, out var r) ? r : null;
 }

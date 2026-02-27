@@ -52,11 +52,48 @@ public static class DocumentEndpoints
                 OverallConfidence = r.HumanFeedback.Data?.OverallConfidence ?? 1.0,
                 FlaggedItems = r.HumanFeedback.Data?.FlaggedItems ?? [],
                 ProcessedAt = r.Ingestion.Data?.ReceivedAt ?? DateTime.UtcNow,
+                ReviewDecision = store.GetReviewDecision(r.DocumentId),
             });
             return Results.Ok(summaries);
         })
         .WithName("ListDocuments")
         .WithSummary("List all processed documents with their pipeline status");
+
+        // ── POST /api/documents/{documentId}/review ───────────────────────────
+        // Admin submits an Approve or Reject decision for a flagged document.
+        group.MapPost("/{documentId}/review", (
+            string documentId,
+            ReviewRequest body,
+            IDocumentStore store) =>
+        {
+            if (store.GetResult(documentId) is null)
+                return Results.NotFound(new { error = $"Document '{documentId}' not found." });
+
+            if (!body.Approved && string.IsNullOrWhiteSpace(body.RejectionReason))
+                return Results.BadRequest(new { error = "RejectionReason is required when rejecting." });
+
+            var decision = new ReviewDecision(
+                DocumentId: documentId,
+                Approved: body.Approved,
+                RejectionReason: body.RejectionReason,
+                ReviewedBy: "admin",
+                DecidedAt: DateTime.UtcNow);
+
+            store.SaveReviewDecision(decision);
+
+            store.AddAuditEntry(new AuditLogEntry(
+                Id: Guid.NewGuid().ToString("N")[..8],
+                DocumentId: documentId,
+                Action: body.Approved ? "Document approved" : "Document rejected",
+                Actor: "admin",
+                Details: body.Approved ? null : body.RejectionReason,
+                Timestamp: DateTime.UtcNow));
+
+            return Results.Ok(decision);
+        })
+        .WithName("ReviewDocument")
+        .WithSummary("Admin approves or rejects a flagged document");
+
 
         // ── GET /api/documents/{documentId} ───────────────────────────────────
         // Returns the full pipeline result for a single document.

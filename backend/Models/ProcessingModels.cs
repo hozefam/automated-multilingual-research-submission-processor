@@ -181,6 +181,19 @@ public record PipelineStepSummary(
 
 public record HitlCorrectionRequest(string Field, string Correction);
 
+// ── Admin review decision ─────────────────────────────────────────────────────
+// Recorded when an admin explicitly approves or rejects a flagged document.
+
+public record ReviewRequest(bool Approved, string? RejectionReason = null);
+
+public record ReviewDecision(
+    string DocumentId,
+    bool Approved,
+    string? RejectionReason,
+    string ReviewedBy,
+    DateTime DecidedAt
+);
+
 
 public record AuditLogEntry(
     string Id,
