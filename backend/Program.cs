@@ -1,7 +1,30 @@
+using Backend.Endpoints;
+using Backend.Pipeline;
+using Backend.Services;
+using Scalar.AspNetCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, ct) =>
+    {
+        document.Info = new()
+        {
+            Title = "AMRSP – Automated Multilingual Research Submission Processor",
+            Version = "v1",
+            Description = """
+                REST API for the AMRSP platform.  
+                Upload a PDF research paper and run it through a 7-step AI pipeline:
+                metadata extraction → language detection → content safety →
+                plagiarism detection → RAG indexing → AI summarization → Q&A.
+                """,
+            Contact = new() { Name = "AMRSP Team" }
+        };
+        return Task.CompletedTask;
+    });
+});
 
 // Allow Angular dev server
 builder.Services.AddCors(options =>
@@ -14,13 +37,31 @@ builder.Services.AddCors(options =>
     });
 });
 
+// ── Pipeline Services ─────────────────────────────────────────────────────────
+builder.Services.AddScoped<IMetadataExtractor, MetadataExtractor>();
+builder.Services.AddScoped<ILanguageDetector, LanguageDetector>();
+builder.Services.AddScoped<IContentSafetyChecker, ContentSafetyChecker>();
+builder.Services.AddScoped<IPlagiarismDetector, PlagiarismDetector>();
+builder.Services.AddScoped<IRagIndexer, RagIndexer>();
+builder.Services.AddScoped<IAiSummarizer, AiSummarizer>();
+builder.Services.AddScoped<IQnAService, QnAService>();
+builder.Services.AddScoped<DocumentPipelineOrchestrator>();
+
+// Required for IFormFile in Minimal APIs
+builder.Services.AddAntiforgery();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// OpenAPI JSON spec + Scalar interactive UI (available in all environments)
+app.MapOpenApi();  // → /openapi/v1.json
+app.MapScalarApiReference(options =>
 {
-    app.MapOpenApi();
-}
+    options.Title = "AMRSP API";
+    options.Theme = ScalarTheme.DeepSpace;
+    options.DefaultHttpClient = new(ScalarTarget.Http, ScalarClient.HttpClient);
+    options.DefaultOpenAllTags = true;  // expand all tag groups on load
+});  // → /scalar/v1
 
 app.UseCors("AllowAngular");
 app.UseHttpsRedirection();
@@ -34,30 +75,12 @@ app.MapGet("/api/health", () =>
         timestamp = DateTime.UtcNow
     }))
 .WithName("GetHealth")
-.WithTags("Health");
+.WithTags("Health")
+.WithSummary("API health check")
+.WithDescription("Returns the current API version, health status and UTC timestamp. Used by the frontend status badge.");
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+// Document pipeline endpoints
+app.MapDocumentEndpoints();
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
