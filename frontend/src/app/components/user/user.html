@@ -14,224 +14,253 @@
 
   <!-- Main Content -->
   <main class="main-content">
+    <!-- Tab Nav -->
+    <nav class="tab-nav">
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'upload'"
+        (click)="switchTab('upload')"
+      >
+        &#128196; Upload
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'submissions'"
+        (click)="switchTab('submissions')"
+      >
+        &#128203; My Submissions
+        @if (mySubmissions().length > 0) {
+          <span class="tab-count">{{ mySubmissions().length }}</span>
+        }
+      </button>
+    </nav>
+
     <!-- Upload + Pipeline -->
-    <div class="submission-layout">
-      <!-- LEFT: Upload zone -->
-      <section class="upload-panel">
-        <h3 class="panel-title">📄 Upload Document</h3>
+    @if (activeTab() === 'upload') {
+      <div class="submission-layout">
+        <!-- LEFT: Upload zone -->
+        <section class="upload-panel">
+          <h3 class="panel-title">📄 Upload Document</h3>
 
-        <!-- Drop zone -->
-        @if (uploadStatus() === 'idle' || uploadStatus() === 'processing') {
-          <div
-            class="drop-zone"
-            [class.drag-over]="isDragOver()"
-            [class.has-file]="selectedFile()"
-            (dragover)="onDragOver($event)"
-            (dragleave)="onDragLeave()"
-            (drop)="onDrop($event)"
-            (click)="fileInput.click()"
-          >
-            <input
-              #fileInput
-              type="file"
-              accept=".pdf,application/pdf"
-              style="display: none"
-              (change)="onFileSelected($event)"
-            />
+          <!-- Drop zone -->
+          @if (uploadStatus() === 'idle' || uploadStatus() === 'processing') {
+            <div
+              class="drop-zone"
+              [class.drag-over]="isDragOver()"
+              [class.has-file]="selectedFile()"
+              (dragover)="onDragOver($event)"
+              (dragleave)="onDragLeave()"
+              (drop)="onDrop($event)"
+              (click)="fileInput.click()"
+            >
+              <input
+                #fileInput
+                type="file"
+                accept=".pdf,application/pdf"
+                style="display: none"
+                (change)="onFileSelected($event)"
+              />
 
-            @if (!selectedFile()) {
-              <div class="drop-zone-empty">
-                <div class="drop-icon">📂</div>
-                <p class="drop-primary">Drag &amp; drop your PDF here</p>
-                <p class="drop-secondary">or click to browse</p>
-                <span class="drop-hint">Accepts PDF files only</span>
-              </div>
-            } @else {
-              <div class="file-info">
-                <div class="file-icon">📑</div>
-                <div class="file-meta">
-                  <span class="file-name">{{ selectedFile()!.name }}</span>
-                  <span class="file-size">{{ formatFileSize(selectedFile()!.size) }}</span>
+              @if (!selectedFile()) {
+                <div class="drop-zone-empty">
+                  <div class="drop-icon">📂</div>
+                  <p class="drop-primary">Drag &amp; drop your PDF here</p>
+                  <p class="drop-secondary">or click to browse</p>
+                  <span class="drop-hint">Accepts PDF files only</span>
                 </div>
-                @if (uploadStatus() === 'idle') {
-                  <button class="btn-clear" (click)="$event.stopPropagation(); reset()">✕</button>
-                }
-              </div>
-            }
-          </div>
-        }
-
-        <!-- Done state -->
-        @if (uploadStatus() === 'done') {
-          <div class="result-box success">
-            <div class="result-icon">✅</div>
-            <div>
-              <p class="result-title">Processing Complete!</p>
-              <p class="result-sub">
-                {{ selectedFile()!.name }} has been fully processed and indexed.
-              </p>
-              @if (totalElapsedMs() !== null) {
-                <p class="elapsed-time">Total pipeline time: {{ totalElapsedMs() }}ms</p>
-              }
-            </div>
-          </div>
-        }
-
-        <!-- Error state -->
-        @if (uploadStatus() === 'error' && apiError()) {
-          <div class="api-error-box">⚠️ {{ apiError() }}</div>
-        }
-
-        <!-- Upload button -->
-        <button
-          class="btn-upload"
-          [disabled]="!selectedFile() || uploadStatus() === 'processing'"
-          [class.processing]="uploadStatus() === 'processing'"
-          [class.done]="uploadStatus() === 'done'"
-          (click)="
-            uploadStatus() === 'done' || uploadStatus() === 'error' ? reset() : startProcessing()
-          "
-        >
-          @if (uploadStatus() === 'idle') {
-            <span>🚀 Upload &amp; Process</span>
-          } @else if (uploadStatus() === 'processing') {
-            <span class="btn-spinner"></span>
-            <span>Processing…</span>
-          } @else if (uploadStatus() === 'done') {
-            <span>🔄 Upload Another</span>
-          } @else if (uploadStatus() === 'error') {
-            <span>🔄 Try Again</span>
-          }
-        </button>
-
-        <!-- Progress bar -->
-        @if (uploadStatus() === 'processing' || uploadStatus() === 'done') {
-          <div class="progress-bar-wrap">
-            <div class="progress-bar-track">
-              <div class="progress-bar-fill" [style.width.%]="progressPercent()"></div>
-            </div>
-            <span class="progress-label">{{ progressPercent() }}%</span>
-          </div>
-        }
-      </section>
-
-      <!-- RIGHT: Pipeline Steps -->
-      <section class="pipeline-panel">
-        <h3 class="panel-title">⚙️ Pipeline</h3>
-
-        <ol class="pipeline-steps">
-          @for (step of steps(); track step.id) {
-            <li class="pipeline-step" [class]="step.state" [title]="step.description">
-              <div class="step-indicator">
-                @if (step.state === 'done') {
-                  <span class="step-check">✓</span>
-                } @else if (step.state === 'error') {
-                  <span class="step-check">✕</span>
-                } @else if (step.state === 'active') {
-                  <span class="step-spinner"></span>
-                } @else {
-                  <span class="step-num">{{ step.id }}</span>
-                }
-              </div>
-              <div class="step-body">
-                <div class="step-header">
-                  <span class="step-icon">{{ step.icon }}</span>
-                  <span class="step-title">{{ step.title }}</span>
-                  @if (step.state === 'done') {
-                    <span class="step-badge done">Done</span>
-                  } @else if (step.state === 'active') {
-                    <span class="step-badge active">Running</span>
-                  } @else if (step.state === 'error') {
-                    <span class="step-badge error">Failed</span>
+              } @else {
+                <div class="file-info">
+                  <div class="file-icon">📑</div>
+                  <div class="file-meta">
+                    <span class="file-name">{{ selectedFile()!.name }}</span>
+                    <span class="file-size">{{ formatFileSize(selectedFile()!.size) }}</span>
+                  </div>
+                  @if (uploadStatus() === 'idle') {
+                    <button class="btn-clear" (click)="$event.stopPropagation(); reset()">✕</button>
                   }
                 </div>
-                @if (step.state === 'error' && step.detail) {
-                  <p class="step-detail">{{ step.detail }}</p>
-                }
-                <p class="step-tooltip">{{ step.description }}</p>
-              </div>
-            </li>
-          }
-        </ol>
-      </section>
-    </div>
-
-    <!-- ── My Submissions ──────────────────────────────────────────────── -->
-    <section class="my-submissions">
-      <div class="submissions-header">
-        <div>
-          <h3 class="panel-title">&#128196; My Submissions</h3>
-          <p class="submissions-subtitle">Track your uploaded documents and their review status.</p>
-        </div>
-        <button
-          class="btn-refresh-subs"
-          (click)="loadMySubmissions()"
-          [disabled]="submissionsLoading()"
-        >
-          &#8635; Refresh
-        </button>
-      </div>
-
-      @if (submissionsLoading()) {
-        <div class="subs-empty">Loading your submissions&hellip;</div>
-      } @else if (mySubmissions().length === 0) {
-        <div class="subs-empty">No submissions yet. Upload a document above to get started.</div>
-      } @else {
-        <div class="subs-table-wrap">
-          <table class="subs-table">
-            <thead>
-              <tr>
-                <th>File</th>
-                <th>Submitted</th>
-                <th>Pipeline</th>
-                <th>Review Status</th>
-                <th>Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (doc of mySubmissions(); track doc.documentId) {
-                <tr>
-                  <td class="subs-filename">&#128196; {{ doc.fileName }}</td>
-                  <td class="subs-date">{{ doc.processedAt | date: 'mediumDate' }}</td>
-                  <td>
-                    <span
-                      [class.sbadge-ok]="doc.overallSuccess"
-                      [class.sbadge-warn]="!doc.overallSuccess"
-                    >
-                      {{ doc.overallSuccess ? '&#10003; OK' : '&#9888; Errors' }}
-                    </span>
-                  </td>
-                  <td>
-                    @switch (reviewStatusLabel(doc)) {
-                      @case ('auto') {
-                        <span class="sbadge-auto">&#9654; Auto-passed</span>
-                      }
-                      @case ('awaiting') {
-                        <span class="sbadge-awaiting">&#9202; Awaiting Review</span>
-                      }
-                      @case ('approved') {
-                        <span class="sbadge-approved">&#10003; Approved</span>
-                      }
-                      @case ('rejected') {
-                        <span class="sbadge-rejected">&#10007; Rejected</span>
-                      }
-                    }
-                  </td>
-                  <td class="subs-note">
-                    @if (doc.reviewDecision?.rejectionReason) {
-                      <span class="rejection-note">{{ doc.reviewDecision!.rejectionReason }}</span>
-                    } @else if (reviewStatusLabel(doc) === 'awaiting') {
-                      <span class="muted">Pending admin decision</span>
-                    } @else {
-                      &ndash;
-                    }
-                  </td>
-                </tr>
               }
-            </tbody>
-          </table>
+            </div>
+          }
+
+          <!-- Done state -->
+          @if (uploadStatus() === 'done') {
+            <div class="result-box success">
+              <div class="result-icon">✅</div>
+              <div>
+                <p class="result-title">Processing Complete!</p>
+                <p class="result-sub">
+                  {{ selectedFile()!.name }} has been fully processed and indexed.
+                </p>
+                @if (totalElapsedMs() !== null) {
+                  <p class="elapsed-time">Total pipeline time: {{ totalElapsedMs() }}ms</p>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Error state -->
+          @if (uploadStatus() === 'error' && apiError()) {
+            <div class="api-error-box">⚠️ {{ apiError() }}</div>
+          }
+
+          <!-- Upload button -->
+          <button
+            class="btn-upload"
+            [disabled]="!selectedFile() || uploadStatus() === 'processing'"
+            [class.processing]="uploadStatus() === 'processing'"
+            [class.done]="uploadStatus() === 'done'"
+            (click)="
+              uploadStatus() === 'done' || uploadStatus() === 'error' ? reset() : startProcessing()
+            "
+          >
+            @if (uploadStatus() === 'idle') {
+              <span>🚀 Upload &amp; Process</span>
+            } @else if (uploadStatus() === 'processing') {
+              <span class="btn-spinner"></span>
+              <span>Processing…</span>
+            } @else if (uploadStatus() === 'done') {
+              <span>🔄 Upload Another</span>
+            } @else if (uploadStatus() === 'error') {
+              <span>🔄 Try Again</span>
+            }
+          </button>
+
+          <!-- Progress bar -->
+          @if (uploadStatus() === 'processing' || uploadStatus() === 'done') {
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-track">
+                <div class="progress-bar-fill" [style.width.%]="progressPercent()"></div>
+              </div>
+              <span class="progress-label">{{ progressPercent() }}%</span>
+            </div>
+          }
+        </section>
+
+        <!-- RIGHT: Pipeline Steps -->
+        <section class="pipeline-panel">
+          <h3 class="panel-title">⚙️ Pipeline</h3>
+
+          <ol class="pipeline-steps">
+            @for (step of steps(); track step.id) {
+              <li class="pipeline-step" [class]="step.state" [title]="step.description">
+                <div class="step-indicator">
+                  @if (step.state === 'done') {
+                    <span class="step-check">✓</span>
+                  } @else if (step.state === 'error') {
+                    <span class="step-check">✕</span>
+                  } @else if (step.state === 'active') {
+                    <span class="step-spinner"></span>
+                  } @else {
+                    <span class="step-num">{{ step.id }}</span>
+                  }
+                </div>
+                <div class="step-body">
+                  <div class="step-header">
+                    <span class="step-icon">{{ step.icon }}</span>
+                    <span class="step-title">{{ step.title }}</span>
+                    @if (step.state === 'done') {
+                      <span class="step-badge done">Done</span>
+                    } @else if (step.state === 'active') {
+                      <span class="step-badge active">Running</span>
+                    } @else if (step.state === 'error') {
+                      <span class="step-badge error">Failed</span>
+                    }
+                  </div>
+                  @if (step.state === 'error' && step.detail) {
+                    <p class="step-detail">{{ step.detail }}</p>
+                  }
+                  <p class="step-tooltip">{{ step.description }}</p>
+                </div>
+              </li>
+            }
+          </ol>
+        </section>
+      </div>
+    }
+    <!-- /upload tab -->
+
+    <!-- My Submissions Tab -->
+    @if (activeTab() === 'submissions') {
+      <section class="my-submissions">
+        <div class="submissions-header">
+          <p class="submissions-subtitle">Track your uploaded documents and their review status.</p>
+          <button
+            class="btn-refresh-subs"
+            (click)="loadMySubmissions()"
+            [disabled]="submissionsLoading()"
+          >
+            &#8635; Refresh
+          </button>
         </div>
-      }
-    </section>
+
+        @if (submissionsLoading()) {
+          <div class="subs-empty">Loading your submissions&hellip;</div>
+        } @else if (mySubmissions().length === 0) {
+          <div class="subs-empty">
+            No submissions yet. Switch to the <strong>Upload</strong> tab to submit your first
+            document.
+          </div>
+        } @else {
+          <div class="subs-table-wrap">
+            <table class="subs-table">
+              <thead>
+                <tr>
+                  <th>File</th>
+                  <th>Submitted</th>
+                  <th>Pipeline</th>
+                  <th>Review Status</th>
+                  <th>Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (doc of mySubmissions(); track doc.documentId) {
+                  <tr>
+                    <td class="subs-filename">&#128196; {{ doc.fileName }}</td>
+                    <td class="subs-date">{{ doc.processedAt | date: 'mediumDate' }}</td>
+                    <td>
+                      <span
+                        [class.sbadge-ok]="doc.overallSuccess"
+                        [class.sbadge-warn]="!doc.overallSuccess"
+                      >
+                        {{ doc.overallSuccess ? '&#10003; OK' : '&#9888; Errors' }}
+                      </span>
+                    </td>
+                    <td>
+                      @switch (reviewStatusLabel(doc)) {
+                        @case ('auto') {
+                          <span class="sbadge-auto">&#9654; Auto-passed</span>
+                        }
+                        @case ('awaiting') {
+                          <span class="sbadge-awaiting">&#9202; Awaiting Review</span>
+                        }
+                        @case ('approved') {
+                          <span class="sbadge-approved">&#10003; Approved</span>
+                        }
+                        @case ('rejected') {
+                          <span class="sbadge-rejected">&#10007; Rejected</span>
+                        }
+                      }
+                    </td>
+                    <td class="subs-note">
+                      @if (doc.reviewDecision?.rejectionReason) {
+                        <span class="rejection-note">{{
+                          doc.reviewDecision!.rejectionReason
+                        }}</span>
+                      } @else if (reviewStatusLabel(doc) === 'awaiting') {
+                        <span class="muted">Pending admin decision</span>
+                      } @else {
+                        &ndash;
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+    <!-- /submissions tab -->
   </main>
 </div>

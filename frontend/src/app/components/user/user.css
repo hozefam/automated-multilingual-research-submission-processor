@@ -70,6 +70,59 @@
   flex: 1;
 }
 
+/* ── Tab Navigation ─────────────────────────────── */
+.tab-nav {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 24px;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 20px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #777;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  transition:
+    color 0.18s,
+    border-color 0.18s,
+    background 0.18s;
+}
+
+.tab-btn:hover {
+  color: #1b5e20;
+  background: #f1f8f1;
+}
+
+.tab-btn.active {
+  color: #1b5e20;
+  border-bottom-color: #2e7d32;
+  background: #f4faf4;
+}
+
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  background: #2e7d32;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
 /* ── Submission Layout ──────────────────────────── */
 .submission-layout {
   display: grid;
@@ -524,16 +577,15 @@
 
 /* ── My Submissions ──────────────────────────────── */
 .my-submissions {
-  margin-top: 36px;
   background: #fff;
   border-radius: 14px;
-  padding: 28px 28px 24px;
+  padding: 24px 28px;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
 }
 
 .submissions-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
   flex-wrap: wrap;

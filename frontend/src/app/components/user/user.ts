@@ -40,6 +40,7 @@ export class UserComponent implements OnInit {
   steps = signal<PipelineStep[]>([]);
   mySubmissions = signal<DocumentSummary[]>([]);
   submissionsLoading = signal(false);
+  activeTab = signal<'upload' | 'submissions'>('upload');
 
   completedSteps = computed(() => this.steps().filter((s) => s.state === 'done').length);
   progressPercent = computed(() => Math.round((this.completedSteps() / this.steps().length) * 100));
@@ -75,6 +76,11 @@ export class UserComponent implements OnInit {
       },
       error: () => this.submissionsLoading.set(false),
     });
+  }
+
+  switchTab(tab: 'upload' | 'submissions'): void {
+    this.activeTab.set(tab);
+    if (tab === 'submissions') this.loadMySubmissions();
   }
 
   reviewStatusLabel(doc: DocumentSummary): 'awaiting' | 'approved' | 'rejected' | 'auto' {
@@ -180,7 +186,7 @@ export class UserComponent implements OnInit {
       );
     });
 
-    // Mark overall status after all animations complete, then refresh submissions
+    // Mark overall status after all animations, then switch to My Submissions tab
     setTimeout(
       () => {
         this.uploadStatus.set('done');
