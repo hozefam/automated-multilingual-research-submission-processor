@@ -1,6 +1,12 @@
 using Backend.Endpoints;
 using Backend.Pipeline;
 using Backend.Services;
+using Backend.Services.MetadataExtraction;
+#pragma warning disable SKEXP0001   // SK Memory APIs are experimental
+#pragma warning disable SKEXP0050   // VolatileMemoryStore is for evaluation purposes
+
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Memory;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +41,55 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
+});
+
+// ── Semantic Kernel ───────────────────────────────────────────────────────────
+//
+//  ④ Filters with Logging – registered as singleton, added to the kernel below
+builder.Services.AddSingleton<MetadataLoggingFilter>();
+
+//  ⑤ Memory – VolatileMemoryStore (in-process, no external store required)
+//     Keys are SHA-256 hashes so GetAsync (exact lookup) needs no embedding model.
+builder.Services.AddSingleton<IMemoryStore, VolatileMemoryStore>();
+
+//  ①②③ Kernel – configures Native Functions, Semantic Functions, Plugins + attaches Filter
+builder.Services.AddSingleton<Kernel>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var filter = sp.GetRequiredService<MetadataLoggingFilter>();
+    var logger = sp.GetRequiredService<ILogger<MetadataExtractionPlugin>>();
+
+    var kBuilder = Kernel.CreateBuilder();
+
+    // Azure OpenAI chat completion (drives Semantic Function + Agent)
+    kBuilder.AddAzureOpenAIChatCompletion(
+        deploymentName: config["AzureOpenAI:ChatDeployment"]
+            ?? throw new InvalidOperationException("AzureOpenAI:ChatDeployment is not configured."),
+        endpoint: config["AzureOpenAI:Endpoint"]
+            ?? throw new InvalidOperationException("AzureOpenAI:Endpoint is not configured."),
+        apiKey: config["AzureOpenAI:ApiKey"]
+            ?? throw new InvalidOperationException("AzureOpenAI:ApiKey is not configured."));
+
+    var kernel = kBuilder.Build();
+
+    // ③ Plugin – "MetadataExtraction": wraps Native Functions (Azure Doc Intelligence calls)
+    var plugin = new MetadataExtractionPlugin(config, logger);
+    kernel.Plugins.AddFromObject(plugin, "MetadataExtraction");
+
+    // ② Semantic Function – registered as "MetadataPrompts.ExtractMetadataFromText"
+    //   The prompt template sends raw document text to GPT-4o and returns metadata JSON.
+    var semanticFn = KernelFunctionFactory.CreateFromPrompt(
+        promptTemplate: MetadataExtractionPlugin.ExtractionPromptTemplate,
+        functionName: "ExtractMetadataFromText",
+        description: "Extracts structured metadata JSON (title, authors, abstract, keywords) from raw research paper text using AI.");
+
+    kernel.Plugins.AddFromFunctions("MetadataPrompts", [semanticFn]);
+
+    // ④ Filters – MetadataLoggingFilter intercepts every function invocation + prompt render
+    kernel.FunctionInvocationFilters.Add(filter);
+    kernel.PromptRenderFilters.Add(filter);
+
+    return kernel;
 });
 
 // ── Pipeline Services ─────────────────────────────────────────────────────────
