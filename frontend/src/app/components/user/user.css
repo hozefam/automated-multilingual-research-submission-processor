@@ -316,15 +316,8 @@
 .pipeline-panel {
   background: #fff;
   border-radius: 14px;
-  padding: 28px 28px 24px;
+  padding: 20px 20px 16px;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
-}
-
-.pipeline-subtitle {
-  font-size: 0.85rem;
-  color: #666;
-  margin: -10px 0 20px;
-  line-height: 1.5;
 }
 
 .pipeline-steps {
@@ -333,16 +326,18 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .pipeline-step {
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 12px 14px;
-  border-radius: 10px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
   border: 1.5px solid transparent;
+  position: relative;
+  cursor: default;
   transition:
     background 0.25s,
     border-color 0.25s;
@@ -455,6 +450,39 @@
 .step-desc,
 .step-desc.pipeline-step.pending {
   display: none;
+}
+
+/* Tooltip — hidden by default, shown on step hover */
+.step-tooltip {
+  display: none;
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1a2a1a;
+  color: #fff;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  padding: 7px 11px;
+  border-radius: 7px;
+  width: 240px;
+  z-index: 200;
+  pointer-events: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.step-tooltip::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 5px solid transparent;
+  border-right-color: #1a2a1a;
+}
+
+.pipeline-step:hover .step-tooltip {
+  display: block;
 }
 
 .step-detail {
