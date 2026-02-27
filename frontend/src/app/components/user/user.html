@@ -79,7 +79,17 @@
               <p class="result-sub">
                 {{ selectedFile()!.name }} has been fully processed and indexed.
               </p>
+              @if (totalElapsedMs() !== null) {
+                <p class="elapsed-time">Total pipeline time: {{ totalElapsedMs() }}ms</p>
+              }
             </div>
+          </div>
+        }
+
+        <!-- Error state -->
+        @if (uploadStatus() === 'error' && apiError()) {
+          <div class="api-error-box">
+            ⚠️ {{ apiError() }}
           </div>
         }
 
@@ -89,7 +99,7 @@
           [disabled]="!selectedFile() || uploadStatus() === 'processing'"
           [class.processing]="uploadStatus() === 'processing'"
           [class.done]="uploadStatus() === 'done'"
-          (click)="uploadStatus() === 'done' ? reset() : startProcessing()"
+          (click)="uploadStatus() === 'done' || uploadStatus() === 'error' ? reset() : startProcessing()"
         >
           @if (uploadStatus() === 'idle') {
             <span>🚀 Upload &amp; Process</span>
@@ -98,6 +108,9 @@
             <span>Processing…</span>
           } @else if (uploadStatus() === 'done') {
             <span>🔄 Upload Another</span>
+          } @else if (uploadStatus() === 'error') {
+            <span>🔄 Try Again</span>
+          }
           }
         </button>
 
@@ -125,6 +138,8 @@
               <div class="step-indicator">
                 @if (step.state === 'done') {
                   <span class="step-check">✓</span>
+                } @else if (step.state === 'error') {
+                  <span class="step-check">✕</span>
                 } @else if (step.state === 'active') {
                   <span class="step-spinner"></span>
                 } @else {
@@ -139,9 +154,14 @@
                     <span class="step-badge done">Done</span>
                   } @else if (step.state === 'active') {
                     <span class="step-badge active">Running</span>
+                  } @else if (step.state === 'error') {
+                    <span class="step-badge error">Failed</span>
                   }
                 </div>
                 <p class="step-desc">{{ step.description }}</p>
+                @if (step.state === 'error' && step.detail) {
+                  <p class="step-detail">{{ step.detail }}</p>
+                }
               </div>
             </li>
           }

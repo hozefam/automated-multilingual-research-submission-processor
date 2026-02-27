@@ -1,6 +1,8 @@
-import { Component, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ApiService, PipelineResult, StepResult } from '../../services/api.service';
+import { Component, computed, signal } from '@angular/core';
+
 import { AuthService } from '../../services/auth.service';
+import { CommonModule } from '@angular/common';
 import { HealthStatusComponent } from '../health-status/health-status';
 
 export type StepState = 'pending' | 'active' | 'done' | 'error';
@@ -15,8 +17,6 @@ export interface PipelineStep {
   detail?: string;
 }
 
-const STEP_DURATIONS_MS = [1200, 900, 1500, 2000, 1800, 1600, 800];
-
 @Component({
   selector: 'app-user',
   imports: [CommonModule, HealthStatusComponent],
@@ -28,6 +28,8 @@ export class UserComponent {
   uploadStatus = signal<UploadStatus>('idle');
   isDragOver = signal(false);
   currentStepIndex = signal(-1);
+  apiError = signal<string | null>(null);
+  totalElapsedMs = signal<number | null>(null);
 
   steps = signal<PipelineStep[]>([
     {
@@ -84,7 +86,10 @@ export class UserComponent {
   completedSteps = computed(() => this.steps().filter((s) => s.state === 'done').length);
   progressPercent = computed(() => Math.round((this.completedSteps() / this.steps().length) * 100));
 
-  constructor(public auth: AuthService) {}
+  constructor(
+    public auth: AuthService,
+    private apiService: ApiService,
+  ) {}
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -122,34 +127,80 @@ export class UserComponent {
   }
 
   startProcessing(): void {
-    if (!this.selectedFile()) return;
+    const file = this.selectedFile();
+    if (!file) return;
     this.uploadStatus.set('processing');
+    this.apiError.set(null);
+    this.totalElapsedMs.set(null);
     this.resetSteps();
-    this.runStep(0);
+
+    // Mark first step active immediately for instant feedback
+    this.setStepState(0, 'active');
+
+    this.apiService.uploadDocument(file).subscribe({
+      next: (result) => this.animateResults(result),
+      error: (err) => {
+        this.apiError.set(
+          err?.error?.error ?? err?.message ?? 'Upload failed. Is the backend running?',
+        );
+        this.uploadStatus.set('error');
+        // Mark all pending/active steps as error
+        this.steps.update((steps) =>
+          steps.map((s) =>
+            s.state === 'active' || s.state === 'pending'
+              ? { ...s, state: 'error' as StepState }
+              : s,
+          ),
+        );
+      },
+    });
   }
 
-  private runStep(index: number): void {
-    if (index >= this.steps().length) {
-      this.uploadStatus.set('done');
-      return;
-    }
+  private animateResults(result: PipelineResult): void {
+    this.totalElapsedMs.set(result.totalElapsedMs);
+    const stepResults: StepResult[] = [
+      result.metadata,
+      result.language,
+      result.contentSafety,
+      result.plagiarism,
+      result.ragIndex,
+      result.summarization,
+      result.qnA,
+    ];
 
-    this.currentStepIndex.set(index);
-    this.steps.update((steps) =>
-      steps.map((s, i) => (i === index ? { ...s, state: 'active' as StepState } : s)),
-    );
-
-    setTimeout(() => {
-      this.steps.update((steps) =>
-        steps.map((s, i) => (i === index ? { ...s, state: 'done' as StepState } : s)),
+    const STEP_DELAY = 350; // ms between each step animation
+    stepResults.forEach((stepResult, i) => {
+      // Activate step
+      setTimeout(() => this.setStepState(i, 'active'), i * STEP_DELAY * 2);
+      // Resolve step to done/error
+      setTimeout(
+        () =>
+          this.setStepState(
+            i,
+            stepResult.success ? 'done' : 'error',
+            stepResult.error ?? undefined,
+          ),
+        i * STEP_DELAY * 2 + STEP_DELAY,
       );
-      this.runStep(index + 1);
-    }, STEP_DURATIONS_MS[index]);
+    });
+
+    // Mark overall status after all animations complete
+    setTimeout(
+      () => this.uploadStatus.set(result.overallSuccess ? 'done' : 'done'),
+      stepResults.length * STEP_DELAY * 2 + STEP_DELAY,
+    );
+  }
+
+  private setStepState(index: number, state: StepState, detail?: string): void {
+    this.currentStepIndex.set(index);
+    this.steps.update((steps) => steps.map((s, i) => (i === index ? { ...s, state, detail } : s)));
   }
 
   reset(): void {
     this.selectedFile.set(null);
     this.uploadStatus.set('idle');
+    this.apiError.set(null);
+    this.totalElapsedMs.set(null);
     this.resetSteps();
   }
 
