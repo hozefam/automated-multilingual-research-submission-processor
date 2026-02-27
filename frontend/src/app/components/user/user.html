@@ -88,9 +88,7 @@
 
         <!-- Error state -->
         @if (uploadStatus() === 'error' && apiError()) {
-          <div class="api-error-box">
-            ⚠️ {{ apiError() }}
-          </div>
+          <div class="api-error-box">⚠️ {{ apiError() }}</div>
         }
 
         <!-- Upload button -->
@@ -99,7 +97,9 @@
           [disabled]="!selectedFile() || uploadStatus() === 'processing'"
           [class.processing]="uploadStatus() === 'processing'"
           [class.done]="uploadStatus() === 'done'"
-          (click)="uploadStatus() === 'done' || uploadStatus() === 'error' ? reset() : startProcessing()"
+          (click)="
+            uploadStatus() === 'done' || uploadStatus() === 'error' ? reset() : startProcessing()
+          "
         >
           @if (uploadStatus() === 'idle') {
             <span>🚀 Upload &amp; Process</span>
@@ -110,7 +110,6 @@
             <span>🔄 Upload Another</span>
           } @else if (uploadStatus() === 'error') {
             <span>🔄 Try Again</span>
-          }
           }
         </button>
 
