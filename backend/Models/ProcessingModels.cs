@@ -18,27 +18,73 @@ public record StepResult<T>(
     long ElapsedMs = 0
 );
 
-// ── 1. Metadata Extraction ────────────────────────────────────────────────
+// ── 1. Ingestion Agent ────────────────────────────────────────────────────
+// Simulates reading a submission from a file-system watch folder (email inbox).
+
+public record IngestionResult(
+    string DocumentId,
+    string FilePath,
+    string FileName,
+    long FileSizeBytes,
+    string FileType,
+    string SimulatedSender,
+    string SimulatedSubject,
+    DateTime ReceivedAt
+);
+
+// ── 2. Pre-process Agent ──────────────────────────────────────────────────
+// File type validation + OCR for scanned/image docs + language detection.
+
+public record PreProcessResult(
+    bool IsValidFileType,
+    string DetectedFileType,
+    bool OcrApplied,
+    string ExtractedText,
+    string PrimaryLanguage,
+    string LanguageCode,
+    double LanguageConfidence
+);
+
+// ── 3. Translation Agent ──────────────────────────────────────────────────
+// Translates to English; stores both original and translated text.
+
+public record TranslationResult(
+    string OriginalText,
+    string TranslatedText,
+    string SourceLanguage,
+    string SourceLanguageName,
+    bool WasTranslated
+);
+
+// ── 4. Extraction Agent ───────────────────────────────────────────────────
+// Extracts structured fields: title, authors, affiliations, abstract,
+// keywords, figures and page count.
 
 public record DocumentMetadata(
     string Title,
     List<string> Authors,
+    List<string> Affiliations,
     string Abstract,
     List<string> Keywords,
+    List<string> Figures,
     int PageCount,
     string Format
 );
 
-// ── 2. Language Detection ─────────────────────────────────────────────────
+// ── 5. Validation Agent ───────────────────────────────────────────────────
+// Business rules: page count 8–25, required sections present.
+// Decoupled from ContentSafetyAgent and PlagiarismDetectionAgent.
 
-public record LanguageDetectionResult(
-    string PrimaryLanguage,
-    string LanguageCode,
-    double Confidence,
-    List<string> AdditionalLanguages
+public record ValidationResult(
+    bool IsValid,
+    int PageCount,
+    bool IsPageCountCompliant,
+    List<string> MissingSections,
+    List<string> ValidationIssues
 );
 
-// ── 3. Content Safety ─────────────────────────────────────────────────────
+// ── 6. Content Safety Agent ───────────────────────────────────────────────
+// Toxicity, hate speech, illicit content check. Flags for HITL.
 
 public enum SafetyCategory { None, HateSpeech, Violence, SexualContent, SelfHarm }
 
@@ -50,7 +96,8 @@ public record ContentSafetyResult(
 
 public record SafetyFlag(SafetyCategory Category, double Severity, string Detail);
 
-// ── 4. Plagiarism Detection ───────────────────────────────────────────────
+// ── 7. Plagiarism Detection Agent ─────────────────────────────────────────
+// Cross-references against academic databases. Decoupled from Validation.
 
 public record PlagiarismResult(
     double SimilarityPercent,
@@ -64,7 +111,8 @@ public record PlagiarismMatch(
     string MatchedText
 );
 
-// ── 5. RAG Indexing ───────────────────────────────────────────────────────
+// ── 8. RAG Agent ──────────────────────────────────────────────────────────
+// Generates embeddings and maintains the vector store.
 
 public record RagIndexResult(
     string IndexId,
@@ -73,7 +121,8 @@ public record RagIndexResult(
     string VectorStore
 );
 
-// ── 6. AI Summarization ───────────────────────────────────────────────────
+// ── 9. Summary Agent ──────────────────────────────────────────────────────
+// ≤250-word human-readable report: key findings, validation issues, missing sections.
 
 public record SummarizationResult(
     string Summary,
@@ -82,7 +131,8 @@ public record SummarizationResult(
     string Methodology
 );
 
-// ── 7. Q&A System ────────────────────────────────────────────────────────
+// ── 10. Q&A Agent ─────────────────────────────────────────────────────────
+// Conversational queries with multilingual support and chat history.
 
 public record QnAReadyResult(
     bool IsReady,
@@ -90,13 +140,55 @@ public record QnAReadyResult(
     string Endpoint
 );
 
-public record QnARequest(string DocumentId, string Question);
+public record QnARequest(string DocumentId, string Question, string? SessionId = null);
 
 public record QnAResponse(
     string Question,
     string Answer,
     List<string> Sources,
-    double Confidence
+    double Confidence,
+    string? SessionId = null
+);
+
+// ── 11. Human Feedback Agent ──────────────────────────────────────────────
+// HITL: flags items where confidence < 25%; accepts admin corrections.
+
+public record HumanFeedbackResult(
+    bool RequiresHumanReview,
+    double OverallConfidence,
+    List<FlaggedItem> FlaggedItems,
+    bool IsResolved
+);
+
+public record FlaggedItem(
+    string Field,
+    string AgentResult,
+    double Confidence,
+    string? HumanCorrection
+);
+
+/// <summary>
+/// Lightweight summary of key pipeline outputs passed to HumanFeedbackAgent.
+/// </summary>
+public record PipelineStepSummary(
+    bool ContentSafetyPassed,
+    double PlagiarismSimilarityPercent,
+    List<string> ValidationIssues,
+    double ExtractionConfidence
+);
+
+// ── Admin / HITL request models ───────────────────────────────────────────────
+
+public record HitlCorrectionRequest(string Field, string Correction);
+
+
+public record AuditLogEntry(
+    string Id,
+    string DocumentId,
+    string Action,
+    string Actor,           // "system" | "admin" | "user"
+    string? Details,
+    DateTime Timestamp
 );
 
 // ── Full Pipeline Result ──────────────────────────────────────────────────
@@ -105,12 +197,17 @@ public record PipelineResult(
     string DocumentId,
     string FileName,
     bool OverallSuccess,
-    StepResult<DocumentMetadata> Metadata,
-    StepResult<LanguageDetectionResult> Language,
+    // 11 agent steps in order
+    StepResult<IngestionResult> Ingestion,
+    StepResult<PreProcessResult> PreProcess,
+    StepResult<TranslationResult> Translation,
+    StepResult<DocumentMetadata> Extraction,
+    StepResult<ValidationResult> Validation,
     StepResult<ContentSafetyResult> ContentSafety,
     StepResult<PlagiarismResult> Plagiarism,
     StepResult<RagIndexResult> RagIndex,
     StepResult<SummarizationResult> Summarization,
     StepResult<QnAReadyResult> QnA,
+    StepResult<HumanFeedbackResult> HumanFeedback,
     long TotalElapsedMs
 );

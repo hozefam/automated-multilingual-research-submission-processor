@@ -1,25 +1,26 @@
 using System.Diagnostics;
 using Backend.Models;
 
-namespace Backend.Services;
+namespace Backend.Agents;
 
 /// <summary>
-/// Stub implementation of RAG indexing.
-/// Replace with Azure AI Search SDK or pgvector / Qdrant / Pinecone ingestion pipeline.
+/// RAG Agent – stub implementation.
+/// TODO: Chunk document text, generate embeddings via Azure OpenAI,
+/// and upsert into Azure AI Search vector store using SK Memory.
 /// </summary>
-public class RagIndexer : IRagIndexer
+public class RagAgent : IRagAgent
 {
-    private readonly ILogger<RagIndexer> _logger;
+    private readonly ILogger<RagAgent> _logger;
 
-    public RagIndexer(ILogger<RagIndexer> logger) => _logger = logger;
+    public RagAgent(ILogger<RagAgent> logger) => _logger = logger;
 
     public async Task<StepResult<RagIndexResult>> IndexAsync(
         string documentId, string text, CancellationToken ct = default)
     {
         var sw = Stopwatch.StartNew();
-        _logger.LogInformation("Indexing document '{DocumentId}' into vector store", documentId);
+        _logger.LogInformation("[RagAgent] Indexing document '{DocumentId}' into vector store", documentId);
 
-        await Task.Delay(900, ct); // TODO: chunk → embed → upsert into vector store
+        await Task.Delay(900, ct); // TODO: chunk → embed → upsert into Azure AI Search
 
         // Simulate chunking: ~500 chars per chunk
         var estimatedChunks = Math.Max(1, text.Length / 500);

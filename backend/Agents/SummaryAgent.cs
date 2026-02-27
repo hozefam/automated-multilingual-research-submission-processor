@@ -1,17 +1,19 @@
 using System.Diagnostics;
 using Backend.Models;
 
-namespace Backend.Services;
+namespace Backend.Agents;
 
 /// <summary>
-/// Stub implementation of AI summarization.
-/// Replace with Azure OpenAI GPT-4o or Azure AI Foundry model call.
+/// Summary Agent – stub implementation.
+/// TODO: Use SK Semantic Function with a prompt template to generate a
+/// ≤250-word structured summary including key findings, validation issues
+/// and missing sections via Azure OpenAI.
 /// </summary>
-public class AiSummarizer : IAiSummarizer
+public class SummaryAgent : ISummaryAgent
 {
-    private readonly ILogger<AiSummarizer> _logger;
+    private readonly ILogger<SummaryAgent> _logger;
 
-    public AiSummarizer(ILogger<AiSummarizer> logger) => _logger = logger;
+    public SummaryAgent(ILogger<SummaryAgent> logger) => _logger = logger;
 
     public async Task<StepResult<SummarizationResult>> SummarizeAsync(
         string text, CancellationToken ct = default)

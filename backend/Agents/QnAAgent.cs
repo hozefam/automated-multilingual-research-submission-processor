@@ -1,17 +1,18 @@
 using System.Diagnostics;
 using Backend.Models;
 
-namespace Backend.Services;
+namespace Backend.Agents;
 
 /// <summary>
-/// Stub implementation of Q&A readiness and querying.
-/// Replace with Azure AI Search + Azure OpenAI RAG pattern or Semantic Kernel.
+/// Q&A Agent – stub implementation.
+/// TODO: Use SK ChatCompletionAgent with RAG retrieval from Azure AI Search.
+/// Support multilingual queries and maintain per-session chat history.
 /// </summary>
-public class QnAService : IQnAService
+public class QnAAgent : IQnAAgent
 {
-    private readonly ILogger<QnAService> _logger;
+    private readonly ILogger<QnAAgent> _logger;
 
-    public QnAService(ILogger<QnAService> logger) => _logger = logger;
+    public QnAAgent(ILogger<QnAAgent> logger) => _logger = logger;
 
     public async Task<StepResult<QnAReadyResult>> PrepareAsync(
         string documentId, string indexId, CancellationToken ct = default)

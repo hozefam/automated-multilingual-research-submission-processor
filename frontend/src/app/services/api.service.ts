@@ -20,13 +20,18 @@ export interface PipelineResult {
   documentId: string;
   fileName: string;
   overallSuccess: boolean;
-  metadata: StepResult;
-  language: StepResult;
-  contentSafety: StepResult;
-  plagiarism: StepResult;
-  ragIndex: StepResult;
-  summarization: StepResult;
-  qnA: StepResult;
+  // 11 agent steps in pipeline order
+  ingestion: StepResult; // 1. Ingestion Agent
+  preProcess: StepResult; // 2. Pre-process Agent
+  translation: StepResult; // 3. Translation Agent
+  extraction: StepResult; // 4. Extraction Agent
+  validation: StepResult; // 5. Validation Agent
+  contentSafety: StepResult; // 6. Content Safety Agent
+  plagiarism: StepResult; // 7. Plagiarism Detection Agent
+  ragIndex: StepResult; // 8. RAG Agent
+  summarization: StepResult; // 9. Summary Agent
+  qnA: StepResult; // 10. Q&A Agent
+  humanFeedback: StepResult; // 11. Human Feedback Agent
   totalElapsedMs: number;
 }
 
@@ -44,5 +49,20 @@ export class ApiService {
     const formData = new FormData();
     formData.append('file', file);
     return this.http.post<PipelineResult>(`${this.baseUrl}/api/documents/process`, formData);
+  }
+
+  askQuestion(documentId: string, question: string, sessionId?: string): Observable<unknown> {
+    return this.http.post(`${this.baseUrl}/api/documents/${documentId}/ask`, {
+      documentId,
+      question,
+      sessionId,
+    });
+  }
+
+  submitHitlCorrection(documentId: string, field: string, correction: string): Observable<unknown> {
+    return this.http.post(`${this.baseUrl}/api/documents/${documentId}/correct`, {
+      field,
+      correction,
+    });
   }
 }

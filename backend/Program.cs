@@ -1,6 +1,6 @@
+using Backend.Agents;
 using Backend.Endpoints;
 using Backend.Pipeline;
-using Backend.Services;
 using Microsoft.SemanticKernel;
 using Scalar.AspNetCore;
 
@@ -58,14 +58,18 @@ builder.Services.AddSingleton<Kernel>(sp =>
     return kBuilder.Build();
 });
 
-// ── Pipeline Services ─────────────────────────────────────────────────────────
-builder.Services.AddScoped<IMetadataExtractor, MetadataExtractor>();
-builder.Services.AddScoped<ILanguageDetector, LanguageDetector>();
-builder.Services.AddScoped<IContentSafetyChecker, ContentSafetyChecker>();
-builder.Services.AddScoped<IPlagiarismDetector, PlagiarismDetector>();
-builder.Services.AddScoped<IRagIndexer, RagIndexer>();
-builder.Services.AddScoped<IAiSummarizer, AiSummarizer>();
-builder.Services.AddScoped<IQnAService, QnAService>();
+// ── Agent Services (11 pipeline agents) ───────────────────────────────────────────────
+builder.Services.AddScoped<IIngestionAgent, IngestionAgent>();
+builder.Services.AddScoped<IPreProcessAgent, PreProcessAgent>();
+builder.Services.AddScoped<ITranslationAgent, TranslationAgent>();
+builder.Services.AddScoped<IExtractionAgent, ExtractionAgent>();
+builder.Services.AddScoped<IValidationAgent, ValidationAgent>();
+builder.Services.AddScoped<IContentSafetyAgent, ContentSafetyAgent>();
+builder.Services.AddScoped<IPlagiarismDetectionAgent, PlagiarismDetectionAgent>();
+builder.Services.AddScoped<IRagAgent, RagAgent>();
+builder.Services.AddScoped<ISummaryAgent, SummaryAgent>();
+builder.Services.AddScoped<IQnAAgent, QnAAgent>();
+builder.Services.AddScoped<IHumanFeedbackAgent, HumanFeedbackAgent>();
 builder.Services.AddScoped<DocumentPipelineOrchestrator>();
 
 // Required for IFormFile in Minimal APIs
